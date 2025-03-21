@@ -11,11 +11,13 @@ public class Controller {
     private ArrayList<Booking> bookingList;
     private ArrayList<User> userList;
     private ArrayList<Payment> paymentsList;
+    private UserFactory userFactory;
 
 
     public Controller() {
         // initialize database connection
-        db = Database.getInstance("src/main/java/data/DB");
+        db = Database.getInstance();
+        userFactory = new UserFactory();
         
         // read all data from database and initialize the system
         parkingLotList = new ArrayList<ParkingLot>();
@@ -34,7 +36,7 @@ public class Controller {
         }
 
         try {
-            db.readAll("Users").forEach(u -> userList.add(User.deserialize(u)));
+            db.readAll("Users").forEach(u -> userList.add(userFactory.createUser(u)));
         } catch (IOException e) {
             System.err.println("Error reading data from database: " + e.getMessage());
         }
@@ -54,7 +56,7 @@ public class Controller {
         // check if a super manager exists
         boolean supermanagerExists = false;
         for (User u: userList) {
-            if (u.getType().equals("super manager")) {
+            if (u.getType().equals("Super Manager")) {
                 supermanagerExists = true;
                 break;
             }
@@ -62,7 +64,7 @@ public class Controller {
 
         // create a super manager if it doesn't exist
         if (!supermanagerExists) {
-            User superManager = new User("super@parking.system", "123", "super manager");
+            User superManager = userFactory.createUser("super@parking.system", "123", "Super Manager");
             userList.add(superManager);
             try {
                 db.insert("Users", superManager.serialize());
@@ -80,7 +82,7 @@ public class Controller {
         return null;
     }
 
-    public User createClient (String email, String password, String type) throws IllegalArgumentException {
+    public User createUser (String email, String password, String type) throws IllegalArgumentException {
         if (!User.emailValid(email))
             throw new IllegalArgumentException("Invalid email format.");
 
@@ -93,14 +95,15 @@ public class Controller {
         }
 
         // create a new client object and save it to database
-        Client client = new Client(email, password, type); //save this on database
-        userList.add(client);
+        System.out.println(type);
+        User user = userFactory.createUser(email, password, type); //save this on database
+        userList.add(user);
         try {
-            db.insert("Users", client.serialize());
+            db.insert("Users", user.serialize());
         } catch (Exception e) {
             System.err.println("Error saving user: " + e.getMessage());
         }
-        return client;
+        return user;
     }
 
     public List<Client> getUnvalidatedClients() {
@@ -234,7 +237,7 @@ public class Controller {
     public User generateManager() throws IOException {
         int randomNum = (int)(Math.random() * 900) + 100;
         int randomPass = (int)(Math.random() * 900) + 100;
-        User m = new User("manager" + randomNum + "@parking.system", "" + randomPass, "manager");
+        User m = userFactory.createUser("manager" + randomNum + "@parking.system", "" + randomPass, "manager");
         userList.add(m);
         db.insert("Users", m.serialize());
         return m;

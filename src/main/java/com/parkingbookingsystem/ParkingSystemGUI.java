@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.util.*;
 
 
-public class ParkingSystemGUI {
+public class ParkingSystemGUI implements Subscriber {
     private Controller controller = new Controller();
+    private Database db = Database.getInstance();
     private JFrame frame;
     private String currUserEmail;
     private int currParkingLot;
@@ -24,6 +25,8 @@ public class ParkingSystemGUI {
         paymentModel;
     
     public ParkingSystemGUI() {
+        db.addSubscriber(this); // observe the model
+
         frame = new JFrame("Parking System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(550, 500);
@@ -100,9 +103,9 @@ public class ParkingSystemGUI {
             if (user != null && user.canLogin(password)) {
                 currUserEmail = email;
                 JOptionPane.showMessageDialog(frame, "Login successful!");
-                if (user.getType().equals("super manager")) {
+                if (user.getType().equals("Super Manager")) {
                     cardLayout.show(mainPanel, "SuperManager");
-                } else if (user.getType().equals("manager")) {
+                } else if (user.getType().equals("Manager")) {
                     cardLayout.show(mainPanel, "Manager");
                 } else {
                     cardLayout.show(mainPanel, "Client");
@@ -176,7 +179,7 @@ public class ParkingSystemGUI {
             String password = new String(passwordField.getPassword());
             String type = (String) userTypeField.getSelectedItem();
             try {
-                controller.createClient(email, password, type);
+                controller.createUser(email, password, type);
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 cardLayout.show(mainPanel, "Login");
                 updateUserApprovalModel();
@@ -976,5 +979,26 @@ public class ParkingSystemGUI {
             System.err.println( "Failed to initialize LaF" );
         }
         SwingUtilities.invokeLater(ParkingSystemGUI::new);
+    }
+
+    @Override
+    public void update(String tableName) {
+        // Update the corresponding model based on the table name
+        switch (tableName) {
+            case "Users":
+                updateUserApprovalModel();
+                break;
+            case "Bookings":
+                updateParkingSpaceBookingManagementModel();
+                updateParkingSpaceBookingModel();
+                break;
+            case "ParkingLots":
+                updateParkingLotManagementModel();
+                updateparkingSpaceManagementModel();
+                break;
+            case "Payments":
+                updatePaymentModel();
+                break;
+        }
     }
 }

@@ -5,16 +5,16 @@ import java.util.*;
 
 public class Database {
     private static Database instance;
-    private String baseFilePath;
+    private String baseFilePath = "Path/To/Database";
     private String delimiter = ",";
+    private List<Subscriber> subscribers = new ArrayList<Subscriber>();
 
-    private Database(String baseFilePath) {
-        this.baseFilePath = baseFilePath;
+    private Database() {
     }
 
-    public static Database getInstance(String baseFilePath) {
+    public static Database getInstance() {
         if (instance == null) {
-            instance = new Database(baseFilePath);
+            instance = new Database();
         }
         return instance;
     }
@@ -40,6 +40,7 @@ public class Database {
                 bw.write(String.join(delimiter, record));
                 bw.newLine();
             }
+
         }
     }
 
@@ -68,5 +69,23 @@ public class Database {
         records.remove(rowIndex);
         writeAll(tableName, records);
         return true;
+    }
+
+    public void addSubscriber(Subscriber subscriber) {
+        subscribers.add(subscriber);
+    }
+
+    public void removeAllSubscribers() {
+        subscribers.clear();
+    }
+
+    public void removeSubscriber(Subscriber subscriber) {
+        subscribers.remove(subscriber);
+    }
+
+    public void notifySubscribers(String tableName) {
+        for (Subscriber subscriber : subscribers) {
+            subscriber.update(tableName);
+        }
     }
 }

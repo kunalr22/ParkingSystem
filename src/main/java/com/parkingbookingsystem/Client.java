@@ -1,12 +1,7 @@
 package com.parkingbookingsystem;
 
-public class Client extends User{
+public class Client extends User {
     private boolean isValidated;
-    
-    public Client(String email, String password, String type) {
-        super(email, password, type);
-        isValidated = type.equalsIgnoreCase("visitor");
-    }
 
     public Client(String email, String password, String type, boolean isValidated) {
         super(email, password, type);
@@ -24,6 +19,10 @@ public class Client extends User{
 
     public void validate() {
         isValidated = true;
+    }
+
+    public void invalidate() {
+        isValidated = false;
     }
 
     public double getRate() {

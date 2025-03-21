@@ -5,7 +5,7 @@ public class Payment {
     private static int counter = 100;
     private int paymentId, bookingId;
     private double amount;
-    private String status, userId, paymentMethod; // credit card, debit card, etc...
+    private String status, userId, paymentMethod; // Method can be: credit card, debit card, status: paid, pending, failed
 
     public Payment(String userId, int bookingId, double amount, String status, String paymentMethod) {
         this.paymentId = ++counter;
@@ -24,6 +24,14 @@ public class Payment {
         this.amount = amount;
         this.status = status;
         this.paymentMethod = paymentMethod;
+    }
+
+    public void ProcessPayment() {
+        PaymentProcessorProxy p = new PaymentProcessorProxy();
+        if (p.processPayment(this))
+            status = "paid";
+        else
+            status = "failed";
     }
 
     public int getPaymentId() {

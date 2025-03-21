@@ -75,17 +75,11 @@ public class User {
         return new String[] { email, password, type};
     }
 
-    public static User deserialize(String[] data) {
-        if (!data[2].equals("manager") && !data[2].equals("super manager"))
-            return Client.deserialize(data);
-        return new User(data[0], data[1], data[2]);
-    }
-
     public static boolean passwordValid(String password) {
         return (password.matches(".*[A-Z].*") &&
                 password.matches(".*[a-z].*") &&
                 password.matches(".*[0-9].*") && 
-                password.matches(".*[!@#$%^&*()-].*"));
+                password.matches(".*[!@#$%^&*()].*"));
     }
 
     public static boolean emailValid(String email) {
