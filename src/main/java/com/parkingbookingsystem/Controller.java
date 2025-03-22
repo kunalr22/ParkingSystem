@@ -169,11 +169,14 @@ public class Controller {
     }
 
     public void addPayment(double amount, String method, int bookingId) {
-        Payment payment = new Payment( getBookingById(bookingId).getResult().getUserId(), bookingId, amount, "paid", method);
+        Booking booking = getBookingById(bookingId).getResult();
+        Payment payment = new Payment(booking.getUserId(), bookingId, amount, "paid", method);
         payment.ProcessPayment();
         paymentsList.add(payment);
+        booking.setStatus("paid");
         try {
             db.insert("Payments", payment.serialize());
+            db.update("Bookings", bookingList.indexOf(booking), booking.serialize());
         } catch (IOException e) {
             System.err.println("Error saving payment: " + e.getMessage());
         }
@@ -316,6 +319,8 @@ public class Controller {
                 b.setLicensePlate(licensePlate);
                 b.setStartTime(from);
                 b.setEndTime(to);
+                long hours = (to.getTime() - from.getTime() ) / (1000 * 60 * 60);
+                b.setRemainingAmount(hours * b.getDepositAmount());
                 try {
                     db.update("Bookings", i, b.serialize());
                 } catch (IOException e) {

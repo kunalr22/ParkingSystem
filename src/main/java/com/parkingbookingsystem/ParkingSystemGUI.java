@@ -526,7 +526,10 @@ public class ParkingSystemGUI implements Subscriber {
         JScrollPane scrollPane = new JScrollPane(bookingList);
         scrollPane.setPreferredSize(new Dimension(300, 150));
         JLabel amountLabel = new JLabel("Amount:");
-        JTextField amountField = new JTextField(15);
+        // JTextField amountField = new JTextField(15);
+        JLabel toPayLabel = new JLabel();
+        JLabel deductedLabel = new JLabel("Deposit deducted?");
+        JLabel deductedFlagLabel = new JLabel();
         JLabel paymentMethodLabel = new JLabel("Payment Method:");
         JComboBox<String> paymentMethodField = new JComboBox<>(Payment.PAYMENT_TYPES);
         JButton payButton = new JButton("Make A Payment");
@@ -550,9 +553,16 @@ public class ParkingSystemGUI implements Subscriber {
         panel.add(amountLabel, gbc);
         
         gbc.gridx = 1;
-        panel.add(amountField, gbc);
+        panel.add(toPayLabel, gbc);
 
         gbc.gridy = 3;
+        gbc.gridx = 0;
+        panel.add(deductedLabel, gbc);
+
+        gbc.gridx = 1;
+        panel.add(deductedFlagLabel, gbc);
+
+        gbc.gridy = 4;
         gbc.gridx = 0;
         panel.add(paymentMethodLabel, gbc);
         
@@ -564,34 +574,47 @@ public class ParkingSystemGUI implements Subscriber {
         gbc.gridx = 0;
         panel.add(payButton, gbc);
         
-        gbc.gridy = 6;
-        panel.add(spacer, gbc);
+//        gbc.gridy = 6;
+//        panel.add(spacer, gbc);
         
         gbc.gridy = 7;
         panel.add(backButton, gbc);
 
-        payButton.addActionListener(_ -> {
-            if (bookingList.getSelectedIndex() == -1) {
-                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
-                return;
-            }
-            try {
-                double amount = Double.parseDouble(amountField.getText());
+        bookingList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && bookingList.getSelectedIndex() != -1) {
                 String booking = bookingList.getSelectedValue();
                 Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
                 Booking bookingObj = getBookingById.execute().getResult();
-                if (amount <= bookingObj.getRemainingAmount()){
-                    JOptionPane.showMessageDialog(frame, "Payment was successfully processed!");
-                    // controller.addPayment(amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
-                    Command<Void> addPayment = new AddPaymentCommand(controller, amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
-                    addPayment.execute();
-                    // updatePaymentModel();
-                } else {
-                    JOptionPane.showMessageDialog(frame, "You can't overpay. Amount too much for this booking.");
+                if (bookingObj.getEndTime().after(new Date())) {
+                    JOptionPane.showMessageDialog(frame, "You can't pay for a booking that hasn't ended yet.");
+                    bookingList.clearSelection();
+                    toPayLabel.setText("");
+                    return;
                 }
-            } catch (NumberFormatException exception) {
-                JOptionPane.showMessageDialog(frame, "Please enter a valid amount.");
+                if (bookingObj.getStatus().equals("paid")) {
+                    JOptionPane.showMessageDialog(frame, "This booking has already been paid for.");
+                    bookingList.clearSelection();
+                    toPayLabel.setText("");
+                    return;
+                }
+                toPayLabel.setText(String.format("$%.2f", bookingObj.getRemainingAmount()) );
+                boolean deductedFlag = bookingObj.isCheckedIn() && bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() < 3600000;
+                deductedFlagLabel.setText(deductedFlag ? "Yes" : "No");
+                deductedFlagLabel.setForeground(deductedFlag ? java.awt.Color.GREEN : java.awt.Color.RED);
             }
+        });
+
+        payButton.addActionListener(_ -> {
+           if (bookingList.getSelectedIndex() == -1) {
+                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                return;
+           }
+           String booking = bookingList.getSelectedValue();
+           Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
+           Booking bookingObj = getBookingById.execute().getResult();
+           Command<Void> addPayment = new AddPaymentCommand(controller, bookingObj.getRemainingAmount(), (String) paymentMethodField.getSelectedItem(), bookingObj.getBookingId());
+           addPayment.execute();
+           JOptionPane.showMessageDialog(frame, "Payment successful. You paid: " + String.format("$%.2f", bookingObj.getRemainingAmount()));
         });
 
         backButton.addActionListener(_ -> {
@@ -929,6 +952,7 @@ public class ParkingSystemGUI implements Subscriber {
             parkingLotManagementModel.addElement(p.getParkingLotId() + ", " + p.getLocation() + ", " + (p.isEnabled()? "enabled" : "disabled"));
        
     }
+
     private JPanel createParkingLotManagementPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -1050,6 +1074,7 @@ public class ParkingSystemGUI implements Subscriber {
                 parkingSpaceManagementModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", " + p.getStatus());
        
     }
+
     private JPanel createParkingSpaceManagementPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());

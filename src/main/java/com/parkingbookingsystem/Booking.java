@@ -19,7 +19,7 @@ public class Booking {
         this.userId = userId;
         this.parkingSpaceId = parkingSpaceId;
         this.parkingLotId = parkingLotId;
-        long hours = ( endTime.getTime() - startTime.getTime() ) / 1000 * 60 * 60;
+        long hours = ( endTime.getTime() - startTime.getTime() ) / (1000 * 60 * 60);
         this.remainingAmount = depositAmount * hours;
         this.depositAmount = depositAmount;
         this.startTime = startTime;
@@ -94,7 +94,10 @@ public class Booking {
     }
 
     public double getRemainingAmount() {
-        return this.remainingAmount;
+        if (checkedIn && checkInTime.getTime() - startTime.getTime() < 3600000) {
+            return remainingAmount - depositAmount;
+        }
+        return remainingAmount;
     }
 
     public void setRemainingAmount(double remainingAmount) {
