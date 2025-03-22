@@ -11,10 +11,12 @@ Bugs
 
 To Do:
 
-- We should change the booking implementation to be a simple start time, which is booked for 1 hour
+- We should change the booking implementation to be simpler
+    - We should only prompt for the start time, from which a 1 hour booking will be made
     - To implement this, the "to" time should be calculated as "from" time + 1 hour
     - The user can extend this booking by some number of hours (integer) as long as the booking has not ENDED yet
     - We extend the "to" time by the number of hours the user wants to extend the booking by
+    - We should probably also store the total hours as an int to easily calculate the total cost
 
 - We need to satisfy the requirement of a deposit
     - The user must pay a deposit to book a parking spot (with its own payment I suppose)
@@ -35,7 +37,7 @@ To Do:
 
 Optional:
 
-- Have two menus for the parking lots/spaces:
+- Instead of listing all available parking spaces in one "box", we can have two "boxes" for the parking lots/spaces:
     - Left "box" to select from available parking lots
     - Right "box" to select from available parking spaces in the selected parking lot
         - This "box" will be populated with the parking spaces in the selected parking lot

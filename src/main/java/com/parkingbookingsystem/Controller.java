@@ -110,13 +110,15 @@ public class Controller {
         return result;
     }
 
-    public List<Client> getUnvalidatedClients() {
+    public Result<List<Client>> getUnvalidatedClients() {
         ArrayList<Client> clients = new ArrayList<>();
         for (User user : userList) {
             if (user instanceof Client && !((Client) user).isValidated())
                 clients.add((Client)user);
         }
-        return clients;
+        Result<List<Client>> result = new Result<>();
+        result.setResult(clients);
+        return result;
     }
 
     public void validateUser(String email) {
@@ -148,8 +150,10 @@ public class Controller {
         }
     }
 
-    public List<Booking> getBookingsForUser(String email) {
-        return bookingList.stream().filter(booking -> booking.getUserId().equals(email)).toList();
+    public Result<List<Booking>> getBookingsForUser(String email) {
+        Result<List<Booking>> result = new Result<>();
+        result.setResult(bookingList.stream().filter(booking -> booking.getUserId().equals(email)).toList());
+        return result;
     }
 
     public Result<Booking> getBookingById(int id) {
@@ -176,7 +180,7 @@ public class Controller {
     }
 
     public List<ParkingSpace> getAvailablePakingSpaceList() {
-        ArrayList<ParkingSpace> spaces = new ArrayList<>();
+        ArrayList<ParkingSpace> spaces = new ArrayList<ParkingSpace>();
         for (ParkingLot p : getParkingLotList())
             spaces.addAll(p.getAvailablePakingSpaceList());
         return spaces;
@@ -320,13 +324,15 @@ public class Controller {
         }
     }
 
-    public List<ParkingLot> getParkingLotList() {
-        return parkingLotList;
+    public Result<List<ParkingLot>> getParkingLotList() {
+        Result<List<ParkingLot>> result = new Result<>();
+        result.setResult(parkingLotList);
+        return result;
     }
 
     public Result<ParkingLot> getParkingLotById(int parkingLotId) {
         Result<ParkingLot> result = new Result<>();
-        for (ParkingLot p: getParkingLotList())
+        for (ParkingLot p: getParkingLotList().getResult())
             if (p.getParkingLotId() == parkingLotId) {
                 result.setResult(p);
                 return result;

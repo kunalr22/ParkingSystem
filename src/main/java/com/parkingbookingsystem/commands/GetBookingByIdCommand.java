@@ -3,12 +3,12 @@ package com.parkingbookingsystem.commands;
 import com.parkingbookingsystem.Booking;
 import com.parkingbookingsystem.Controller;
 
-public class GetBookingCommand implements Command<Booking> {
+public class GetBookingByIdCommand implements Command<Booking> {
 
     private final Controller receiver;
     private final int id;
 
-    public GetBookingCommand(Controller receiver, int id) {
+    public GetBookingByIdCommand(Controller receiver, int id) {
         this.receiver = receiver;
         this.id = id;
     }

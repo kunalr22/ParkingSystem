@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Deque;
+import java.util.List;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -36,8 +37,12 @@ import com.parkingbookingsystem.commands.CreateParkingLotCommand;
 import com.parkingbookingsystem.commands.CreateUserCommand;
 import com.parkingbookingsystem.commands.DeleteUserCommand;
 import com.parkingbookingsystem.commands.GenerateManagerCommand;
-import com.parkingbookingsystem.commands.GetBookingCommand;
+import com.parkingbookingsystem.commands.GetAvailableParkingSpaceListCommand;
+import com.parkingbookingsystem.commands.GetBookingByIdCommand;
+import com.parkingbookingsystem.commands.GetBookingsForUserCommand;
 import com.parkingbookingsystem.commands.GetParkingLotByIdCommand;
+import com.parkingbookingsystem.commands.GetParkingLotListCommand;
+import com.parkingbookingsystem.commands.GetUnvalidatedClientsCommand;
 import com.parkingbookingsystem.commands.GetUserCommand;
 import com.parkingbookingsystem.commands.ModifyParkingSpaceBookingCommand;
 import com.parkingbookingsystem.commands.Result;
@@ -428,7 +433,10 @@ public class ParkingSystemGUI implements Subscriber {
 
     private void updateUserApprovalModel() {
         userApprovalModel.clear();
-        for (Client client : controller.getUnvalidatedClients())
+        Command<List<Client>> getUnvalidatedClients = new GetUnvalidatedClientsCommand(controller);
+        List<Client> unvalidatedClients = getUnvalidatedClients.execute().getResult();
+        // for (Client client : controller.getUnvalidatedClients())
+        for (Client client : unvalidatedClients)
             userApprovalModel.addElement(client.getEmail() + ", " + client.getType() + ", pending approval");
     }
     private JPanel createUserApprovalPanel() {
@@ -513,7 +521,10 @@ public class ParkingSystemGUI implements Subscriber {
     
     private void updatePaymentModel() {
         paymentModel.clear();
-        for (Booking b : controller.getBookingsForUser(currUserEmail))
+        Command<List<Booking>> getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);
+        List<Booking> bookings = getBookingsForUser.execute().getResult();
+        // for (Booking b : controller.getBookingsForUser(currUserEmail))
+        for (Booking b : bookings)
             paymentModel.addElement(b.getBookingId()+ ", " + b.getParkingSpaceId() + ", " + b.getParkingLotId() + ", from " + b.getStartTime() + ", to " + b.getEndTime() + ", license place: " + b.getLicensePlate());
     }
     private JPanel createPaymentPanel() {
@@ -582,7 +593,7 @@ public class ParkingSystemGUI implements Subscriber {
             try {
                 double amount = Double.parseDouble(amountField.getText());
                 String booking = bookingList.getSelectedValue();
-                Command<Booking> getBookingById = new GetBookingCommand(controller, Integer.parseInt(booking.split(", ")[0]));
+                Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
                 Booking bookingObj = getBookingById.execute().getResult();
                 if (amount <= bookingObj.getRemainingAmount()){
                     JOptionPane.showMessageDialog(frame, "Payment was successfully processed!");
@@ -607,7 +618,10 @@ public class ParkingSystemGUI implements Subscriber {
 
     private void updateParkingSpaceBookingModel() {
         parkingSpaceBookingModel.clear();
-        for (ParkingSpace p : controller.getAvailablePakingSpaceList())
+        Command<List<ParkingSpace>> getAvailableParkingSpaceList = new GetAvailableParkingSpaceListCommand(controller);
+        List<ParkingSpace> availableParkingSpaceList = getAvailableParkingSpaceList.execute().getResult();
+        // for (ParkingSpace p : controller.getAvailableParkingSpaceList())
+        for (ParkingSpace p : availableParkingSpaceList)
             parkingSpaceBookingModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", available");
     }
     private JPanel createParkingSpaceBookingPanel() {
@@ -713,7 +727,10 @@ public class ParkingSystemGUI implements Subscriber {
 
     private void updateParkingSpaceBookingManagementModel() {
         parkingSpaceBookingManagementModel.clear();
-        for (Booking b : controller.getBookingsForUser(currUserEmail))
+        Command<List<Booking>> getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);
+        List<Booking> bookings = getBookingsForUser.execute().getResult();
+        // for (Booking b : controller.getBookingsForUser(currUserEmail))
+        for (Booking b : bookings)
             parkingSpaceBookingManagementModel.addElement(b.getBookingId()+ ", " + b.getParkingSpaceId() + ", " + b.getParkingLotId() + ", from " + b.getStartTime() + ", to " + b.getEndTime() + ", license place: " + b.getLicensePlate());
     }
 
@@ -850,7 +867,10 @@ public class ParkingSystemGUI implements Subscriber {
    
     private void updateParkingLotManagementModel() {
         parkingLotManagementModel.clear();
-        for (ParkingLot p : controller.getParkingLotList())
+        Command<List<ParkingLot>> getParkingLotList = new GetParkingLotListCommand(controller);
+        List<ParkingLot> parkingLots = getParkingLotList.execute().getResult();
+        // for (ParkingLot p : controller.getParkingLotList())
+        for (ParkingLot p : parkingLots)
             parkingLotManagementModel.addElement(p.getParkingLotId() + ", " + p.getLocation() + ", " + (p.isEnabled()? "enabled" : "disabled"));
        
     }
