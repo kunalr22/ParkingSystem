@@ -525,7 +525,7 @@ public class ParkingSystemGUI implements Subscriber {
         updatePaymentModel();
         JScrollPane scrollPane = new JScrollPane(bookingList);
         scrollPane.setPreferredSize(new Dimension(300, 150));
-        JLabel amountLabel = new JLabel("Amount:");
+        JLabel amountLabel = new JLabel("Amount Due:");
         // JTextField amountField = new JTextField(15);
         JLabel toPayLabel = new JLabel();
         JLabel deductedLabel = new JLabel("Deposit deducted?");
