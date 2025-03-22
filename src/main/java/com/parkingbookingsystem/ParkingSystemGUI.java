@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Calendar;
 import java.util.Date;
@@ -26,11 +25,22 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import com.parkingbookingsystem.commands.AddPaymentCommand;
+import com.parkingbookingsystem.commands.BookParkingSpaceCommand;
+import com.parkingbookingsystem.commands.CancelParkingSpaceBookingCommand;
 import com.parkingbookingsystem.commands.Command;
+import com.parkingbookingsystem.commands.CreateParkingLotCommand;
+import com.parkingbookingsystem.commands.CreateUserCommand;
+import com.parkingbookingsystem.commands.DeleteUserCommand;
+import com.parkingbookingsystem.commands.GenerateManagerCommand;
+import com.parkingbookingsystem.commands.GetBookingCommand;
+import com.parkingbookingsystem.commands.GetParkingLotByIdCommand;
 import com.parkingbookingsystem.commands.GetUserCommand;
-
+import com.parkingbookingsystem.commands.ModifyParkingSpaceBookingCommand;
+import com.parkingbookingsystem.commands.Result;
 
 public class ParkingSystemGUI implements Subscriber {
     private final Controller controller = new Controller();
@@ -70,6 +80,14 @@ public class ParkingSystemGUI implements Subscriber {
         mainPanel.add(createParkingSpaceBookingPanel(), "ParkingSpaceBooking");
         mainPanel.add(createParkingSpaceBookingManagementPanel(), "ParkingSpaceBookingManagement");
         mainPanel.add(createPaymentPanel(), "Payment");
+
+        // initial update
+        updateUserApprovalModel();
+        updateParkingSpaceBookingManagementModel();
+        updateParkingSpaceBookingModel();
+        updateParkingLotManagementModel();
+        updateparkingSpaceManagementModel();
+        updatePaymentModel();
         
         frame.add(mainPanel);
         frame.setVisible(true);
@@ -130,8 +148,8 @@ public class ParkingSystemGUI implements Subscriber {
                 currUserEmail = email;
                 JOptionPane.showMessageDialog(frame, "Login successful!");
                 switch (user.getType()) {
-                    case "Super Manager" -> cardLayout.show(mainPanel, "SuperManager");
-                    case "Manager" -> cardLayout.show(mainPanel, "Manager");
+                    case SuperManager.TYPE -> cardLayout.show(mainPanel, "SuperManager");
+                    case Manager.TYPE -> cardLayout.show(mainPanel, "Manager");
                     default -> cardLayout.show(mainPanel, "Client");
                 }
             } else {
@@ -158,7 +176,7 @@ public class ParkingSystemGUI implements Subscriber {
         JPasswordField passwordField = new JPasswordField(15);
         JLabel userTypeLabel = new JLabel("User Type:");
         // If new user types are added, has to be modified. Violates Open-Close principle.
-        JComboBox<String> userTypeField = new JComboBox<>(new String[]{"Student", "Faculty", "Non-Faculty Staff", "Visitor"});
+        JComboBox<String> userTypeField = new JComboBox<>(UserFactory.getAllClientTypes());
         JButton registerButton = new JButton("Register");
         JLabel loginLabel = new JLabel("Already have an account?");
         JButton loginButton = new JButton("Login");
@@ -209,7 +227,7 @@ public class ParkingSystemGUI implements Subscriber {
             if (result.getResult() != null) {
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 cardLayout.show(mainPanel, "Login");
-                updateUserApprovalModel();
+                // updateUserApprovalModel();
             } else {
                 JOptionPane.showMessageDialog(frame, "Invalid user creation: " + result.getMessage());
             }
@@ -317,13 +335,13 @@ public class ParkingSystemGUI implements Subscriber {
 
         manageParkingButton.addActionListener(_ -> {
             prevPanels.push("Manager");
-            updateParkingLotManagementModel();
+            // updateParkingLotManagementModel();
             cardLayout.show(mainPanel, "ParkingLotManagement");
         });
 
         verifyUsersButton.addActionListener(_ -> {
             prevPanels.push("Manager");
-            updateUserApprovalModel();
+            // updateUserApprovalModel();
             cardLayout.show(mainPanel, "UserApproval");
 
         });
@@ -387,13 +405,13 @@ public class ParkingSystemGUI implements Subscriber {
 
         manageParkingButton.addActionListener(_ -> {
             prevPanels.push("SuperManager");
-            updateParkingLotManagementModel();
+            // updateParkingLotManagementModel();
             cardLayout.show(mainPanel, "ParkingLotManagement");
         });
         
         verifyUsersButton.addActionListener(_ -> {
             prevPanels.push("SuperManager");
-            updateUserApprovalModel();
+            // updateUserApprovalModel();
             cardLayout.show(mainPanel, "UserApproval");
         });
 
@@ -461,10 +479,10 @@ public class ParkingSystemGUI implements Subscriber {
         approveButton.addActionListener(_ -> {
             if (userList.getSelectedIndex() != -1) {
                 String user = userList.getSelectedValue();
-                // controller.validateUser(user.split(", ")[0]);
-                Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
+                controller.validateUser(user.split(", ")[0]);
+                // Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
                 JOptionPane.showMessageDialog(frame, "You approved user: " + user.split(", ")[0] + "!");
-                updateUserApprovalModel();
+                // updateUserApprovalModel();
             } else {
                 JOptionPane.showMessageDialog(frame, "Please select a user first.");
             }
@@ -472,12 +490,11 @@ public class ParkingSystemGUI implements Subscriber {
 
         declineButton.addActionListener(_ -> {
             if (userList.getSelectedIndex() != -1) {
-                System.out.println("test");
                 String user = userList.getSelectedValue();
                 // controller.deleteUser(user.split(", ")[0]);
                 Command<Void> deleteUser = new DeleteUserCommand(controller, user.split(", ")[0]);
                 JOptionPane.showMessageDialog(frame, "You deleted user: " + user.split(", ")[0] + "!");
-                updateUserApprovalModel();
+                // updateUserApprovalModel();
             } else {
                 JOptionPane.showMessageDialog(frame, "Please select a user first.");
             }
@@ -511,7 +528,7 @@ public class ParkingSystemGUI implements Subscriber {
         JLabel amountLabel = new JLabel("Amount:");
         JTextField amountField = new JTextField(15);
         JLabel paymentMethodLabel = new JLabel("Payment Method:");
-        JComboBox<String> paymentMethodField = new JComboBox<>(new String[]{"Credit Card", "Debit Card", "E-Transfer"});
+        JComboBox<String> paymentMethodField = new JComboBox<>(Payment.PAYMENT_TYPES);
         JButton payButton = new JButton("Make A Payment");
         JButton backButton = new JButton("Back");
         JLabel spacer = new JLabel(" ");
@@ -568,7 +585,7 @@ public class ParkingSystemGUI implements Subscriber {
                     // controller.addPayment(amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
                     Command<Void> addPayment = new AddPaymentCommand(controller, amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
                     addPayment.execute();
-                    updatePaymentModel();
+                    // updatePaymentModel();
                 } else {
                     JOptionPane.showMessageDialog(frame, "You can't overpay. Amount too much for this booking.");
                 }
@@ -676,7 +693,7 @@ public class ParkingSystemGUI implements Subscriber {
                         (Date)toTimeSpinner.getValue());
                 bookParkingSpace.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
-                updateParkingSpaceBookingManagementModel();
+                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't process the booking: " + e.getMessage());
             }
@@ -792,7 +809,7 @@ public class ParkingSystemGUI implements Subscriber {
                         (Date)toTimeSpinner.getValue());
                 modifyParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully modified!");
-                updateParkingSpaceBookingManagementModel();
+                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't modify the booking: " + e.getMessage());
             }
@@ -813,7 +830,7 @@ public class ParkingSystemGUI implements Subscriber {
                         Integer.parseInt(booking.split(", ")[1]));
                 cancelParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully canceled!");
-                updateParkingSpaceBookingManagementModel();
+                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't cancel the booking: " + e.getMessage());
             }
@@ -896,7 +913,7 @@ public class ParkingSystemGUI implements Subscriber {
             Result<Void> result = createParkingLot.execute();
             if (result == null) {
                 JOptionPane.showMessageDialog(frame, "Parking lot was successfully added!");
-                updateParkingLotManagementModel();
+                // updateParkingLotManagementModel();
             } else {
                 JOptionPane.showMessageDialog(frame, "Couldn't add the parking lot: " + result.getMessage());
             }
@@ -908,12 +925,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingLot = parkingLotList.getSelectedValue();
-            // ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
-            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, Integer.parseInt(parkingLot.split(", ")[0]));
-            ParkingLot p = getParkingLotById.execute().getResult();
-            p.disable();
+            controller.disableParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully disabled!");
-            updateParkingLotManagementModel();
+            // updateParkingLotManagementModel();
         });
 
         enableButton.addActionListener(_ -> {
@@ -922,12 +936,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingLot = parkingLotList.getSelectedValue();
-            // ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
-            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, Integer.parseInt(parkingLot.split(", ")[0]));
-            ParkingLot p = getParkingLotById.execute().getResult();
-            p.enable();
+            controller.enableParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully enabled!");
-            updateParkingLotManagementModel();
+            // updateParkingLotManagementModel();
         });
 
         manageParkingSpaceButton.addActionListener(_ -> {
@@ -1012,12 +1023,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingSpace = parkingSpaceList.getSelectedValue();
-            // ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
-            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
-            ParkingSpace p = getParkingLotById.execute().getResult().getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
-            p.enable();
+            controller.enableParkingSpaceById(currParkingLot, Integer.parseInt(parkingSpace.split(", ")[0]));
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully enabled!");
-            updateparkingSpaceManagementModel();
+            // updateparkingSpaceManagementModel();
         });
 
         disableButton.addActionListener(_ -> {
@@ -1026,12 +1034,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingSpace = parkingSpaceList.getSelectedValue();
-            // ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
-            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
-            ParkingSpace p = getParkingLotById.execute().getResult().getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
-            p.disable();
+            controller.disableParkingSpaceById(currParkingLot, Integer.parseInt(parkingSpace.split(", ")[0]));
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully disabled!");
-            updateparkingSpaceManagementModel();
+            // updateparkingSpaceManagementModel();
         });
 
         backButton.addActionListener(_ -> {
@@ -1041,17 +1046,9 @@ public class ParkingSystemGUI implements Subscriber {
         return panel;
     }
 
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel( new FlatLightLaf() );
-        } catch( Exception ex ) {
-            System.err.println( "Failed to initialize LaF" );
-        }
-        SwingUtilities.invokeLater(ParkingSystemGUI::new);
-    }
-
     @Override
     public void update(String tableName) {
+        System.out.println(tableName);
         // Update the corresponding model based on the table name
         switch (tableName) {
             case "Users" -> updateUserApprovalModel();
@@ -1065,5 +1062,14 @@ public class ParkingSystemGUI implements Subscriber {
             }
             case "Payments" -> updatePaymentModel();
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel( new FlatLightLaf() );
+        } catch(UnsupportedLookAndFeelException e ) {
+            System.err.println( "Failed to initialize LaF" );
+        }
+        SwingUtilities.invokeLater(ParkingSystemGUI::new);
     }
 }

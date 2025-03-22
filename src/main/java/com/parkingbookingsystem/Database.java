@@ -40,6 +40,7 @@ public class Database {
                 bw.write(String.join(delimiter, record));
                 bw.newLine();
             }
+            notifySubscribers(tableName);
 
         }
     }
@@ -48,6 +49,7 @@ public class Database {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(getTableFilePath(tableName), true))) {
             bw.write(String.join(delimiter, record));
             bw.newLine();
+            notifySubscribers(tableName);
         }
     }
 

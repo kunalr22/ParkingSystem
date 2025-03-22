@@ -3,9 +3,11 @@ import java.util.Objects;
 
 public class Payment {
     private static int counter = 100;
-    private int paymentId, bookingId;
+    private final int paymentId, bookingId;
     private double amount;
-    private String status, userId, paymentMethod; // Method can be: credit card, debit card, status: paid, pending, failed
+    private final String userId;
+    private String status, paymentMethod; // Method can be: credit card, debit card, status: paid, pending, failed
+    public static final String[] PAYMENT_TYPES = {"Credit Card", "Debit Card", "E-Transfer"};
 
     public Payment(String userId, int bookingId, double amount, String status, String paymentMethod) {
         this.paymentId = ++counter;
@@ -38,24 +40,12 @@ public class Payment {
         return this.paymentId;
     }
 
-    public void setPaymentId(int paymentId) {
-        this.paymentId = paymentId;
-    }
-
     public String getUserId() {
         return this.userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
     public int getBookingId() {
         return this.bookingId;
-    }
-
-    public void setBookingId(int bookingId) {
-        this.bookingId = bookingId;
     }
 
     public double getAmount() {
@@ -82,20 +72,6 @@ public class Payment {
         this.paymentMethod = paymentMethod;
     }
 
-    public Payment paymentId(int paymentId) {
-        setPaymentId(paymentId);
-        return this;
-    }
-
-    public Payment userId(String userId) {
-        setUserId(userId);
-        return this;
-    }
-
-    public Payment bookingId(int bookingId) {
-        setBookingId(bookingId);
-        return this;
-    }
 
     public Payment amount(double amount) {
         setAmount(amount);

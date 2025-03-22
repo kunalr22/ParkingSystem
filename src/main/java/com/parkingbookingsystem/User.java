@@ -27,23 +27,16 @@ public class User {
         this.email = email;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getType() {
         return this.type;
     }
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public User email(String email) {
-        setEmail(email);
-        return this;
-    }
-
-
-    public User type(String type) {
-        setType(type);
-        return this;
     }
 
     @Override
@@ -78,11 +71,11 @@ public class User {
     public static boolean passwordValid(String password) {
         return (password.matches(".*[A-Z].*") &&
                 password.matches(".*[a-z].*") &&
-                password.matches(".*[0-9].*") && 
+                password.matches(".*[0-9].*") &&
                 password.matches(".*[!@#$%^&*()].*"));
     }
 
-    public static boolean emailValid(String email) {
-        return email.contains("@") && email.contains(".");
+    public static boolean clientEmailValid(String email) {
+        return email.contains("@") && email.contains(".") && !email.startsWith("manager");
     }
 }

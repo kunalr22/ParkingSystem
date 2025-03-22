@@ -2,7 +2,7 @@ package com.parkingbookingsystem;
 
 public class UserFactory {
 
-    public User createUser(String... params) {
+    public static User createUser(String... params) {
         String email = params[0];
         String password = params[1];
         String type = params[2];
@@ -10,28 +10,27 @@ public class UserFactory {
         if (params.length > 3) {
             isValidated = Boolean.parseBoolean(params[3]);
         }
-        // manager
-        if (type.equalsIgnoreCase("Manager")) {
-            return new Manager(email, password);
-        } else if (type.equalsIgnoreCase("Super Manager")) {
-            return SuperManager.getInstance(email, password);
-        } 
-        // not a manager
-        Client newClient;
-        if (type.equalsIgnoreCase("Non-Faculty Staff")) {
-            newClient = new Staff(email, password);
-        } else if (type.equalsIgnoreCase("Student")) {
-            newClient = new Student(email, password);
-        } else if (type.equalsIgnoreCase("Visitor")) {
-            newClient = new Visitor(email, password);
-        } else if (type.equalsIgnoreCase("Faculty")) {
-            newClient = new Faculty(email, password);
-        } else {
-            return null; // bad user type
+
+        User newUser;
+
+        switch (type) {
+            case SuperManager.TYPE -> newUser = SuperManager.getInstance(email, password);
+            case Manager.TYPE -> newUser = new Manager(email, password);
+            case Staff.TYPE -> newUser = new Staff(email, password);
+            case Student.TYPE -> newUser = new Student(email, password);
+            case Visitor.TYPE -> newUser = new Visitor(email, password);
+            case Faculty.TYPE -> newUser = new Faculty(email, password);
+            default -> {
+                return null; // bad user type
+            }
         }
-        if (isValidated) {
-            newClient.validate();
+        if (isValidated && newUser instanceof Client) {
+            ((Client) newUser).validate();
         }
-        return newClient;
+        return newUser;
+    }
+
+    public static String[] getAllClientTypes() {
+        return new String[] {Staff.TYPE, Student.TYPE, Visitor.TYPE, Faculty.TYPE};
     }
 }

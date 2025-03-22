@@ -1,11 +1,11 @@
 package com.parkingbookingsystem;
 
-import com.parkingbookingsystem.commands.Result;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import com.parkingbookingsystem.commands.Result;
 
 public class Controller {
     private final Database db;
@@ -13,19 +13,16 @@ public class Controller {
     private ArrayList<Booking> bookingList;
     private ArrayList<User> userList;
     private ArrayList<Payment> paymentsList;
-    private UserFactory userFactory;
 
 
     public Controller() {
-        // initialize database connection
         db = Database.getInstance();
-        userFactory = new UserFactory();
         
         // read all data from database and initialize the system
-        parkingLotList = new ArrayList<ParkingLot>();
-        bookingList = new ArrayList<Booking>();
-        userList = new ArrayList<User>();
-        paymentsList = new ArrayList<Payment>();
+        parkingLotList = new ArrayList<>();
+        bookingList = new ArrayList<>();
+        userList = new ArrayList<>();
+        paymentsList = new ArrayList<>();
 
         try {
             db.readAll("ParkingLots").forEach( p -> parkingLotList.add(ParkingLot.deserialize(p)));
@@ -38,7 +35,7 @@ public class Controller {
         }
 
         try {
-            db.readAll("Users").forEach(u -> userList.add(userFactory.createUser(u)));
+            db.readAll("Users").forEach(u -> userList.add(UserFactory.createUser(u)));
         } catch (IOException e) {
             System.err.println("Error reading data from database: " + e.getMessage());
         }
@@ -66,11 +63,11 @@ public class Controller {
 
         // create a super manager if it doesn't exist
         if (!supermanagerExists) {
-            User superManager = userFactory.createUser("super@parking.system", "123", "Super Manager");
+            User superManager = UserFactory.createUser("super@parking.system", "123", "Super Manager");
             userList.add(superManager);
             try {
                 db.insert("Users", superManager.serialize());
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.err.println("Error saving super manager: " + e.getMessage());
             }
         }
@@ -89,7 +86,7 @@ public class Controller {
     }
 
     public Result<User> createUser (String email, String password, String type) throws IllegalArgumentException {
-        if (!User.emailValid(email))
+        if (!User.clientEmailValid(email))
             throw new IllegalArgumentException("Invalid email format.");
 
         if (!User.passwordValid(password))
@@ -101,12 +98,11 @@ public class Controller {
         }
 
         // create a new client object and save it to database
-        System.out.println(type);
-        User user = userFactory.createUser(email, password, type); //save this on database
+        User user = UserFactory.createUser(email, password, type); //save this on database
         userList.add(user);
         try {
             db.insert("Users", user.serialize());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Error saving user: " + e.getMessage());
         }
         Result<User> result = new Result<>();
@@ -130,7 +126,7 @@ public class Controller {
                 client.validate();
                 try {
                     db.update("Users", i, client.serialize());
-                } catch (Exception e) {
+                } catch (IOException e) {
                     System.err.println("Error updating user: " + e.getMessage());
                 }
                 break;
@@ -144,7 +140,7 @@ public class Controller {
                 userList.remove(i);
                 try {
                     db.delete("Users", i);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     System.err.println("Error deleting user: " + e.getMessage());
                 }
                 break;
@@ -170,16 +166,17 @@ public class Controller {
 
     public void addPayment(double amount, String method, int bookingId) {
         Payment payment = new Payment( getBookingById(bookingId).getResult().getUserId(), bookingId, amount, "paid", method);
+        payment.ProcessPayment();
         paymentsList.add(payment);
         try {
             db.insert("Payments", payment.serialize());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Error saving payment: " + e.getMessage());
         }
     }
 
     public List<ParkingSpace> getAvailablePakingSpaceList() {
-        ArrayList<ParkingSpace> spaces = new ArrayList<ParkingSpace>();
+        ArrayList<ParkingSpace> spaces = new ArrayList<>();
         for (ParkingLot p : getParkingLotList())
             spaces.addAll(p.getAvailablePakingSpaceList());
         return spaces;
@@ -193,8 +190,96 @@ public class Controller {
         bookingList.add(booking);
         try {
             db.insert("Bookings", booking.serialize());
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Error saving booking: " + e.getMessage());
+        }
+    }
+
+    public void disableParkingLotById(int parkingLotId) {
+        for (int i = 0; i < parkingLotList.size(); i++) {
+            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {
+                parkingLotList.get(i).disable();
+                
+                ParkingSpace[] ps = parkingLotList.get(i).getSpaces();
+                for (int j =0; j<100; j++) {
+                    ps[j].disable();
+                    try {
+                        db.update("ParkingSpaces", i * 100 + j, ps[j].serialize());
+                    } catch (IOException e) {
+                        System.err.println("Error updating ParkingSpace: " + e.getMessage());
+                    }
+                }
+
+                try {
+                    db.update("ParkingLots", i, parkingLotList.get(i).serialize());
+                } catch (IOException e) {
+                    System.err.println("Error updating ParkingLot: " + e.getMessage());
+                }
+                break;
+            }
+        }
+    }
+
+    public void enableParkingLotById(int parkingLotId) {
+        for (int i = 0; i < parkingLotList.size(); i++) {
+            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {
+                parkingLotList.get(i).enable();
+                
+                ParkingSpace[] ps = parkingLotList.get(i).getSpaces();
+                for (int j =0; j<100; j++) {
+                    ps[j].enable();
+                    try {
+                        db.update("ParkingSpaces", i * 100 + j, ps[j].serialize());
+                    } catch (IOException e) {
+                        System.err.println("Error updating ParkingSpace: " + e.getMessage());
+                    }
+                }
+
+                try {
+                    db.update("ParkingLots", i, parkingLotList.get(i).serialize());
+                } catch (IOException e) {
+                    System.err.println("Error updating ParkingLot: " + e.getMessage());
+                }
+                break;
+            }
+        }
+    }
+
+    public void disableParkingSpaceById(int parkingLotId, int parkingSpaceId) {
+        for (int i = 0; i < parkingLotList.size(); i++) {
+            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {
+                for (int j=0; j <100; j++) {
+                    if (parkingLotList.get(i).getSpaces()[j].getParkingSpaceId() == parkingSpaceId) {
+                        parkingLotList.get(i).getSpaces()[j].disable();
+                        try {
+                            db.update("ParkingSpaces", i * 100 + j, parkingLotList.get(i).getSpaces()[j].serialize());
+                        } catch (IOException e) {
+                            System.err.println("Error updating ParkingLot: " + e.getMessage());
+                        }
+                    }
+                }
+                
+                break;
+            }
+        }
+    }
+
+    public void enableParkingSpaceById(int parkingLotId, int parkingSpaceId) {
+        for (int i = 0; i < parkingLotList.size(); i++) {
+            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {
+                for (int j=0; j <100; j++) {
+                    if (parkingLotList.get(i).getSpaces()[j].getParkingSpaceId() == parkingSpaceId) {
+                        parkingLotList.get(i).getSpaces()[j].enable();
+                        try {
+                            db.update("ParkingSpaces", i * 100 + j, parkingLotList.get(i).getSpaces()[j].serialize());
+                        } catch (IOException e) {
+                            System.err.println("Error updating ParkingLot: " + e.getMessage());
+                        }
+                    }
+                }
+                
+                break;
+            }
         }
     }
 
@@ -210,7 +295,7 @@ public class Controller {
                 b.setEndTime(to);
                 try {
                     db.update("Bookings", i, b.serialize());
-                } catch (Exception e) {
+                } catch (IOException e) {
                     System.err.println("Error updating booking: " + e.getMessage());
                 }
                 break;
@@ -227,7 +312,7 @@ public class Controller {
                 bookingList.remove(i);
                 try {
                     db.delete("Bookings", i);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     System.err.println("Error deleting booking: " + e.getMessage());
                 }
                 break;
@@ -253,7 +338,7 @@ public class Controller {
     public Result<User> generateManager() throws IOException {
         int randomNum = (int)(Math.random() * 900) + 100;
         int randomPass = (int)(Math.random() * 900) + 100;
-        User m = userFactory.createUser("manager" + randomNum + "@parking.system", "" + randomPass, "manager");
+        User m = UserFactory.createUser("manager" + randomNum + "@parking.system", "" + randomPass, Manager.TYPE);
         userList.add(m);
         db.insert("Users", m.serialize());
         Result<User> result = new Result<>();
