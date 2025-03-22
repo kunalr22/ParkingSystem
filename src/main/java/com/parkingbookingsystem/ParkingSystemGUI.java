@@ -593,13 +593,114 @@ public class ParkingSystemGUI implements Subscriber {
         for (ParkingSpace p : availableParkingSpaceList)
             parkingSpaceBookingModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", available");
     }
+//    private JPanel createParkingSpaceBookingPanel() {
+//        JPanel panel = new JPanel();
+//        panel.setLayout(new GridBagLayout());
+//        GridBagConstraints gbc = new GridBagConstraints();
+//        gbc.insets = new Insets(10, 10, 10, 10);
+//        gbc.fill = GridBagConstraints.HORIZONTAL;
+//
+//        JLabel instructionLabel = new JLabel("Please select a parking space from the list.");
+//        parkingSpaceBookingModel = new DefaultListModel<>();
+//        JList<String> bookingList = new JList<>(parkingSpaceBookingModel);
+//        updateParkingSpaceBookingModel();
+//        JScrollPane scrollPane = new JScrollPane(bookingList);
+//        scrollPane.setPreferredSize(new Dimension(300, 150));
+//        SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
+//        JSpinner fromTimeSpinner = new JSpinner(model);
+//        JSpinner toTimeSpinner = new JSpinner(model);
+//        fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, "yyyy-MM-dd HH:mm"));
+//        toTimeSpinner.setEditor(new JSpinner.DateEditor(toTimeSpinner, "yyyy-MM-dd HH:mm"));
+//        JLabel fromLabel = new JLabel("From:");
+//        JLabel toLabel = new JLabel("To:");
+//        JLabel licenseLabel = new JLabel("License Plate:");
+//        JTextField licenseField = new JTextField(15);
+//        JButton bookButton = new JButton("Book Space");
+//        JButton backButton = new JButton("Back");
+//        JLabel spacer = new JLabel(" ");
+//        spacer.setPreferredSize(new Dimension(0, 20));
+//
+//        gbc.gridx = 0;
+//        gbc.gridy = 0;
+//        gbc.gridwidth = 2;
+//        gbc.anchor = GridBagConstraints.CENTER;
+//        panel.add(instructionLabel, gbc);
+//
+//        gbc.gridy = 1;
+//        gbc.gridwidth = 2;
+//        panel.add(scrollPane, gbc);
+//
+//        gbc.gridy = 2;
+//        gbc.gridx = 0;
+//        gbc.gridwidth = 1;
+//        panel.add(fromLabel, gbc);
+//
+//        gbc.gridx = 1;
+//        panel.add(fromTimeSpinner, gbc);
+//
+//        gbc.gridy = 3;
+//        gbc.gridx = 0;
+//        panel.add(toLabel, gbc);
+//
+//        gbc.gridx = 1;
+//        panel.add(toTimeSpinner, gbc);
+//
+//        gbc.gridy = 4;
+//        gbc.gridx = 0;
+//        panel.add(licenseLabel, gbc);
+//
+//        gbc.gridx = 1;
+//        panel.add(licenseField, gbc);
+//
+//        gbc.gridwidth = 2;
+//        gbc.gridy = 5;
+//        gbc.gridx = 0;
+//        panel.add(bookButton, gbc);
+//
+//        gbc.gridy = 6;
+//        panel.add(spacer, gbc);
+//
+//        gbc.gridy = 7;
+//        panel.add(backButton, gbc);
+//
+//        bookButton.addActionListener(_ -> {
+//            if (bookingList.getSelectedIndex() == -1) {
+//                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+//                return;
+//            }
+//            String booking = bookingList.getSelectedValue(); // shouldn't this be the parking space list?
+//            try {
+//                // controller.bookParkingSpace(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+//                Command<Void> bookParkingSpace = new BookParkingSpaceCommand(
+//                        controller,
+//                        currUserEmail,
+//                        Integer.parseInt(booking.split(", ")[0]),
+//                        Integer.parseInt(booking.split(", ")[1]),
+//                        licenseField.getText(), (Date)fromTimeSpinner.getValue(),
+//                        (Date)toTimeSpinner.getValue());
+//                bookParkingSpace.execute();
+//                JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
+//                updateParkingSpaceBookingManagementModel();
+//            } catch (IllegalArgumentException e) {
+//                JOptionPane.showMessageDialog(frame, "Couldn't process the booking: " + e.getMessage());
+//            }
+//        });
+//
+//        backButton.addActionListener(_ -> {
+//            cardLayout.show(mainPanel, prevPanels.pop());
+//        });
+//
+//        return panel;
+//
+//    }
+
     private JPanel createParkingSpaceBookingPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        
+
         JLabel instructionLabel = new JLabel("Please select a parking space from the list.");
         parkingSpaceBookingModel = new DefaultListModel<>();
         JList<String> bookingList = new JList<>(parkingSpaceBookingModel);
@@ -608,76 +709,80 @@ public class ParkingSystemGUI implements Subscriber {
         scrollPane.setPreferredSize(new Dimension(300, 150));
         SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
         JSpinner fromTimeSpinner = new JSpinner(model);
-        JSpinner toTimeSpinner = new JSpinner(model);
         fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, "yyyy-MM-dd HH:mm"));
-        toTimeSpinner.setEditor(new JSpinner.DateEditor(toTimeSpinner, "yyyy-MM-dd HH:mm"));
         JLabel fromLabel = new JLabel("From:");
-        JLabel toLabel = new JLabel("To:");
         JLabel licenseLabel = new JLabel("License Plate:");
         JTextField licenseField = new JTextField(15);
+        JLabel paymentMethodLabel = new JLabel("Deposit Payment Method:");
+        JComboBox<String> paymentMethodField = new JComboBox<>(new String[]{"Credit Card", "Debit Card", "E-Transfer"});
         JButton bookButton = new JButton("Book Space");
         JButton backButton = new JButton("Back");
         JLabel spacer = new JLabel(" ");
         spacer.setPreferredSize(new Dimension(0, 20));
-        
+
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(instructionLabel, gbc);
-        
+
         gbc.gridy = 1;
         gbc.gridwidth = 2;
         panel.add(scrollPane, gbc);
-        
+
         gbc.gridy = 2;
         gbc.gridx = 0;
         gbc.gridwidth = 1;
         panel.add(fromLabel, gbc);
-        
+
         gbc.gridx = 1;
         panel.add(fromTimeSpinner, gbc);
 
         gbc.gridy = 3;
         gbc.gridx = 0;
-        panel.add(toLabel, gbc);
-        
+        panel.add(licenseLabel, gbc);
+
         gbc.gridx = 1;
-        panel.add(toTimeSpinner, gbc);
+        panel.add(licenseField, gbc);
 
         gbc.gridy = 4;
         gbc.gridx = 0;
-        panel.add(licenseLabel, gbc);
-        
+        panel.add(paymentMethodLabel, gbc);
+
         gbc.gridx = 1;
-        panel.add(licenseField, gbc);
+        panel.add(paymentMethodField, gbc);
 
         gbc.gridwidth = 2;
         gbc.gridy = 5;
         gbc.gridx = 0;
         panel.add(bookButton, gbc);
-        
+
         gbc.gridy = 6;
         panel.add(spacer, gbc);
-        
+
         gbc.gridy = 7;
         panel.add(backButton, gbc);
 
         bookButton.addActionListener(_ -> {
             if (bookingList.getSelectedIndex() == -1) {
-                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                JOptionPane.showMessageDialog(frame, "Please select a parking space first.");
                 return;
             }
-            String booking = bookingList.getSelectedValue(); // shouldn't this be the parking space list?
+            String booking = bookingList.getSelectedValue();
             try {
-                // controller.bookParkingSpace(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                Date fromTime = (Date) fromTimeSpinner.getValue();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(fromTime);
+                calendar.add(Calendar.HOUR, 1);
+                Date toTime = calendar.getTime();
                 Command<Void> bookParkingSpace = new BookParkingSpaceCommand(
                         controller,
                         currUserEmail,
                         Integer.parseInt(booking.split(", ")[0]),
                         Integer.parseInt(booking.split(", ")[1]),
-                        licenseField.getText(), (Date)fromTimeSpinner.getValue(),
-                        (Date)toTimeSpinner.getValue());
+                        licenseField.getText(),
+                        fromTime,
+                        toTime);
                 bookParkingSpace.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
                 updateParkingSpaceBookingManagementModel();
@@ -689,9 +794,8 @@ public class ParkingSystemGUI implements Subscriber {
         backButton.addActionListener(_ -> {
             cardLayout.show(mainPanel, prevPanels.pop());
         });
-        
+
         return panel;
-        
     }
 
     private void updateParkingSpaceBookingManagementModel() {
