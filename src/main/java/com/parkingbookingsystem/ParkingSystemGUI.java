@@ -589,12 +589,14 @@ public class ParkingSystemGUI implements Subscriber {
                     JOptionPane.showMessageDialog(frame, "You can't pay for a booking that hasn't ended yet.");
                     bookingList.clearSelection();
                     toPayLabel.setText("");
+                    deductedFlagLabel.setText("");
                     return;
                 }
                 if (bookingObj.getStatus().equals("paid")) {
                     JOptionPane.showMessageDialog(frame, "This booking has already been paid for.");
                     bookingList.clearSelection();
                     toPayLabel.setText("");
+                    deductedFlagLabel.setText("");
                     return;
                 }
                 toPayLabel.setText(String.format("$%.2f", bookingObj.getRemainingAmount()) );
