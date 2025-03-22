@@ -1,9 +1,19 @@
 package com.parkingbookingsystem;
 
 public class PaymentProcessorProxy {
+    private PaymentStrategy strategy = null;
+    
     public boolean processPayment(Payment p) {
-        // uses REST API to connect to credit / debit card network and process the payment
-
-        return true;
+        switch (p.getPaymentMethod()) {
+            case "Credit Card":
+                strategy = new CreditCardStrategy();
+                break;
+            case "Debit Card":
+                strategy = new DebitCardStrategy();
+                break;
+            case "E-Transfer":
+                strategy = new EtransferStrategy();
+        }
+        return strategy.processPayment(p);
     }
 }

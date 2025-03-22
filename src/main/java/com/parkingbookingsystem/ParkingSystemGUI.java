@@ -41,6 +41,8 @@ import com.parkingbookingsystem.commands.GetParkingLotByIdCommand;
 import com.parkingbookingsystem.commands.GetUserCommand;
 import com.parkingbookingsystem.commands.ModifyParkingSpaceBookingCommand;
 import com.parkingbookingsystem.commands.Result;
+import com.parkingbookingsystem.commands.ValidateUserCommand;
+
 
 public class ParkingSystemGUI implements Subscriber {
     private final Controller controller = new Controller();
@@ -479,8 +481,9 @@ public class ParkingSystemGUI implements Subscriber {
         approveButton.addActionListener(_ -> {
             if (userList.getSelectedIndex() != -1) {
                 String user = userList.getSelectedValue();
-                controller.validateUser(user.split(", ")[0]);
-                // Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
+                // controller.validateUser(user.split(", ")[0]);
+                Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
+                validateUser.execute();
                 JOptionPane.showMessageDialog(frame, "You approved user: " + user.split(", ")[0] + "!");
                 // updateUserApprovalModel();
             } else {
@@ -493,6 +496,7 @@ public class ParkingSystemGUI implements Subscriber {
                 String user = userList.getSelectedValue();
                 // controller.deleteUser(user.split(", ")[0]);
                 Command<Void> deleteUser = new DeleteUserCommand(controller, user.split(", ")[0]);
+                deleteUser.execute();
                 JOptionPane.showMessageDialog(frame, "You deleted user: " + user.split(", ")[0] + "!");
                 // updateUserApprovalModel();
             } else {
@@ -965,6 +969,7 @@ public class ParkingSystemGUI implements Subscriber {
         // ParkingLot currPL = controller.getParkingLotById(currParkingLot);
         Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
         ParkingLot currPL = getParkingLotById.execute().getResult();
+        
         if (currPL != null)
             for (ParkingSpace p : currPL.getSpaces())
                 parkingSpaceManagementModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", " + p.getStatus());
@@ -1048,7 +1053,6 @@ public class ParkingSystemGUI implements Subscriber {
 
     @Override
     public void update(String tableName) {
-        System.out.println(tableName);
         // Update the corresponding model based on the table name
         switch (tableName) {
             case "Users" -> updateUserApprovalModel();
@@ -1056,10 +1060,8 @@ public class ParkingSystemGUI implements Subscriber {
                 updateParkingSpaceBookingManagementModel();
                 updateParkingSpaceBookingModel();
             }
-            case "ParkingLots" -> {
-                updateParkingLotManagementModel();
-                updateparkingSpaceManagementModel();
-            }
+            case "ParkingLots" -> updateParkingLotManagementModel();
+            case "ParkingSpaces" -> updateparkingSpaceManagementModel();
             case "Payments" -> updatePaymentModel();
         }
     }
