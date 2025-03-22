@@ -819,12 +819,16 @@ public class ParkingSystemGUI implements Subscriber {
         JList<String> bookingList = new JList<>(parkingSpaceBookingManagementModel);
         updateParkingSpaceBookingManagementModel();
         JScrollPane scrollPane = new JScrollPane(bookingList);
-        scrollPane.setPreferredSize(new Dimension(300, 150));
+        scrollPane.setPreferredSize(new Dimension(300, 140));
         JButton cancelButton = new JButton("Cancel Booking");
         JButton modifyButton = new JButton("Apply Changes");
+        JButton extendButton = new JButton("Extend Booking by 1 Hour");
+        JButton checkInButton = new JButton("Check In");
         Dimension buttonSize = new Dimension(200, 25);
         cancelButton.setPreferredSize(buttonSize);
         modifyButton.setPreferredSize(buttonSize);
+        extendButton.setPreferredSize(buttonSize);
+        checkInButton.setPreferredSize(buttonSize);
         SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
         JSpinner fromTimeSpinner = new JSpinner(model);
 //        JSpinner toTimeSpinner = new JSpinner(model);
@@ -834,7 +838,6 @@ public class ParkingSystemGUI implements Subscriber {
 //        JLabel toLabel = new JLabel("New To:");
         JLabel licenseLabel = new JLabel("New License Plate:");
         JTextField licenseField = new JTextField(15);
-        JButton extendButton = new JButton("Extend Booking by 1 Hour");
         JButton backButton = new JButton("Back");
         JLabel spacer = new JLabel(" ");
         spacer.setPreferredSize(new Dimension(0, 20));
@@ -880,10 +883,14 @@ public class ParkingSystemGUI implements Subscriber {
         
         gbc.gridx = 0;
         gbc.gridy = 5;
-        gbc.gridwidth = 2;
         panel.add(extendButton, gbc);
 
+        gbc.gridx = 1;
+        panel.add(checkInButton, gbc);
+
         gbc.gridy = 6;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
         panel.add(spacer, gbc);
         
         gbc.gridy = 7;
@@ -977,6 +984,33 @@ public class ParkingSystemGUI implements Subscriber {
                 updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't extend the booking: " + e.getMessage());
+            }
+        });
+
+        checkInButton.addActionListener(_ -> {
+            if (bookingList.getSelectedIndex() == -1) {
+                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                return;
+            }
+            String booking = bookingList.getSelectedValue();
+            try {
+                Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
+                Booking bookingObj = getBookingById.execute().getResult();
+                if (bookingObj.getStartTime().before(new Date())) {
+                    Command<Void> checkIn = new CheckInToBookingCommand(
+                            controller,
+                            bookingObj);
+                    checkIn.execute();
+                    if (bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() < 3600000)
+                        JOptionPane.showMessageDialog(frame, "You have successfully checked in!");
+                    else
+                        JOptionPane.showMessageDialog(frame, "You have successfully checked in! No-show in the first hour so deposit fee will not be deducted.");
+                    updateParkingSpaceBookingManagementModel();
+                } else {
+                    throw new IllegalArgumentException("You can't check in before the booking time.");
+                }
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(frame, "Couldn't check in: " + e.getMessage());
             }
         });
 

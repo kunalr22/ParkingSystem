@@ -23,6 +23,10 @@ public class Sensor {
     public String sendInfoToSystem() {
         return "Sensor ID: " + sensorId + ", Parking Space ID: " + parkingSpaceId + ", Car Detected: " + carDetected;
     }
+
+    public void setCarDetected(boolean carDetected) {
+        this.carDetected = carDetected;
+    }
     
     public String scanCarInfo() {
         return null;

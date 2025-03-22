@@ -9,7 +9,7 @@ public class Booking {
     private String userId; // email address
     private double remainingAmount;
     private double depositAmount;
-    private Date startTime, endTime;
+    private Date startTime, endTime, checkInTime;
     private String licensePlate;
     private String status; // paid, pending confirmation, confirmed
 
@@ -19,10 +19,11 @@ public class Booking {
         this.parkingSpaceId = parkingSpaceId;
         this.parkingLotId = parkingLotId;
         long hours = ( endTime.getTime() - startTime.getTime() ) / 1000 * 60 * 60;
-        this.remainingAmount = depositAmount * (hours - 1);
+        this.remainingAmount = depositAmount * hours;
         this.depositAmount = depositAmount;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.checkInTime = new Date(1);
         this.licensePlate = licensePlate;
         this.status = "pending confirmation";
     }
@@ -120,6 +121,14 @@ public class Booking {
         this.endTime = enableTime;
     }
 
+    public Date getCheckInTime() {
+        return this.checkInTime;
+    }
+
+    public void setCheckInTime(Date checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
     public String getStatus() {
         return this.status;
     }
@@ -213,7 +222,8 @@ public class Booking {
             Double.toString(remainingAmount), 
             Double.toString(depositAmount), 
             startTime.getTime() + "", 
-            endTime.getTime() + "", 
+            endTime.getTime() + "",
+            checkInTime.getTime() + "",
             licensePlate,
             status
         };

@@ -261,6 +261,15 @@ public class Controller {
         }
     }
 
+    public void checkIntoBooking(Booking booking) {
+        booking.setCheckInTime(new Date());
+        try {
+            db.update("Bookings", bookingList.indexOf(booking), booking.serialize());
+        } catch (Exception e) {
+            System.err.println("Error updating booking: " + e.getMessage());
+        }
+    }
+
     public Result<List<ParkingLot>> getParkingLotList() {
         Result<List<ParkingLot>> result = new Result<>();
         result.setResult(parkingLotList);
