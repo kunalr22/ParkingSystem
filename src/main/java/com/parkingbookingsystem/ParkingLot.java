@@ -49,7 +49,7 @@ public class ParkingLot {
         return null;
     }
 
-    public List<ParkingSpace> getAvailablePakingSpaceList() {
+    public List<ParkingSpace> getAvailableParkingSpaceList() {
         List<ParkingSpace> availableSpaces = new ArrayList<>();
         for (ParkingSpace space : spaces) {
             if (space!= null && space.getStatus() == ParkingSpace.ParkingStatus.AVAILABLE) {
