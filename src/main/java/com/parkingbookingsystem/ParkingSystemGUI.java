@@ -1,6 +1,8 @@
 package com.parkingbookingsystem;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import com.parkingbookingsystem.commands.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
@@ -99,7 +101,9 @@ public class ParkingSystemGUI implements Subscriber {
         loginButton.addActionListener(_ -> {
             String email = emailField.getText();
             String password = new String(passwordField.getPassword());
-            User user = controller.getUserById(email);
+            // User user = controller.getUserById(email);
+            Command<User> getUser = new GetUserCommand(controller, email);
+            User user = getUser.execute().getResult();
             if (user != null && user.canLogin(password)) {
                 currUserEmail = email;
                 JOptionPane.showMessageDialog(frame, "Login successful!");

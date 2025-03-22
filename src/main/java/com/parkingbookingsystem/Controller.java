@@ -1,5 +1,7 @@
 package com.parkingbookingsystem;
 
+import com.parkingbookingsystem.commands.Result;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -74,12 +76,16 @@ public class Controller {
         }
     }
     
-    public User getUserById(String email) {
+    public Result<User> getUserById(String email) {
+        Result<User> result = new Result<>();
         for (User user : userList) {
-            if (user.getEmail().equals(email))
-                return user;
+            if (user.getEmail().equals(email)) {
+                result.setResult(user);
+                return result;
+            }
         }
-        return null;
+        result.setResult(null);
+        return result;
     }
 
     public User createUser (String email, String password, String type) throws IllegalArgumentException {
@@ -177,7 +183,7 @@ public class Controller {
         // to do
         // check if everything is ok, parking spot is available
         // user can book, etc.
-        Booking booking = new Booking(currUserEmail,parkingSpaceId,parkingLotId, ((Client) getUserById(currUserEmail)).getRate(), from, to, licensePlate);
+        Booking booking = new Booking(currUserEmail,parkingSpaceId,parkingLotId, ((Client) getUserById(currUserEmail).getResult()).getRate(), from, to, licensePlate);
         bookingList.add(booking);
         try {
             db.insert("Bookings", booking.serialize());
