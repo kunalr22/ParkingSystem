@@ -37,7 +37,7 @@ To Do:
 
 Optional:
 
-- Have two menus for the parking lots/spaces:
+- Instead of listing all available parking spaces in one "box", we can have two "boxes" for the parking lots/spaces:
     - Left "box" to select from available parking lots
     - Right "box" to select from available parking spaces in the selected parking lot
         - This "box" will be populated with the parking spaces in the selected parking lot
