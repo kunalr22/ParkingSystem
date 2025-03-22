@@ -182,13 +182,16 @@ public class ParkingSystemGUI implements Subscriber {
             String email = emailField.getText();
             String password = new String(passwordField.getPassword());
             String type = (String) userTypeField.getSelectedItem();
-            try {
-                controller.createUser(email, password, type);
+
+            // controller.createUser(email, password, type);
+            Command<User> createUser = new CreateUserCommand(controller, email, password, type);
+            Result<User> result = createUser.execute();
+            if (result.getResult() != null) {
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 cardLayout.show(mainPanel, "Login");
                 updateUserApprovalModel();
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(frame, "Invalid user creation: " + ex.getMessage());
+            } else {
+                JOptionPane.showMessageDialog(frame, "Invalid user creation: " + result.getMessage());
             }
         });
         
@@ -351,11 +354,14 @@ public class ParkingSystemGUI implements Subscriber {
         panel.add(logoutButton, gbc);
 
         generateManagerButton.addActionListener(_ -> {
-            try {
-                User newManager = controller.generateManager();
+            // User newManager = controller.generateManager();
+            Command<User> generateManager = new GenerateManagerCommand(controller);
+            Result<User> result = generateManager.execute();
+            User newManager = result.getResult();
+            if (newManager != null) {
                 JOptionPane.showMessageDialog(frame, "New manager account generated: Username: " + newManager.getEmail() + ", Password: " + newManager.getPassword());
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(frame, "Error generating new manager: " + e.getMessage());
+            } else {
+                JOptionPane.showMessageDialog(frame, "Error generating new manager: " + result.getMessage());
             }
         });
 
@@ -435,7 +441,8 @@ public class ParkingSystemGUI implements Subscriber {
         approveButton.addActionListener(_ -> {
             if (userList.getSelectedIndex() != -1) {
                 String user = userList.getSelectedValue();
-                controller.validateUser(user.split(", ")[0]);
+                // controller.validateUser(user.split(", ")[0]);
+                Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
                 JOptionPane.showMessageDialog(frame, "You approved user: " + user.split(", ")[0] + "!");
                 updateUserApprovalModel();
             } else {
@@ -447,7 +454,8 @@ public class ParkingSystemGUI implements Subscriber {
             if (userList.getSelectedIndex() != -1) {
                 System.out.println("test");
                 String user = userList.getSelectedValue();
-                controller.deleteUser(user.split(", ")[0]);
+                // controller.deleteUser(user.split(", ")[0]);
+                Command<Void> deleteUser = new DeleteUserCommand(controller, user.split(", ")[0]);
                 JOptionPane.showMessageDialog(frame, "You deleted user: " + user.split(", ")[0] + "!");
                 updateUserApprovalModel();
             } else {
@@ -533,9 +541,13 @@ public class ParkingSystemGUI implements Subscriber {
             try {
                 double amount = Double.parseDouble(amountField.getText());
                 String booking = bookingList.getSelectedValue();
-                if (amount <= controller.getBookingById(Integer.parseInt(booking.split(", ")[0])).getRemainingAmount()){
+                Command<Booking> getBookingById = new GetBookingCommand(controller, Integer.parseInt(booking.split(", ")[0]));
+                Booking bookingObj = getBookingById.execute().getResult();
+                if (amount <= bookingObj.getRemainingAmount()){
                     JOptionPane.showMessageDialog(frame, "Payment was successfully processed!");
-                    controller.addPayment(amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
+                    // controller.addPayment(amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
+                    Command<Void> addPayment = new AddPaymentCommand(controller, amount, (String) paymentMethodField.getSelectedItem(), Integer.parseInt(booking.split(", ")[0]));
+                    addPayment.execute();
                     updatePaymentModel();
                 } else {
                     JOptionPane.showMessageDialog(frame, "You can't overpay. Amount too much for this booking.");
@@ -632,9 +644,17 @@ public class ParkingSystemGUI implements Subscriber {
                 JOptionPane.showMessageDialog(frame, "Please select a booking first.");
                 return;
             }
-            String booking = bookingList.getSelectedValue();
+            String booking = bookingList.getSelectedValue(); // shouldn't this be the parking space list?
             try {
-                controller.bookParkingSpace(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                // controller.bookParkingSpace(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                Command<Void> bookParkingSpace = new BookParkingSpaceCommand(
+                        controller,
+                        currUserEmail,
+                        Integer.parseInt(booking.split(", ")[0]),
+                        Integer.parseInt(booking.split(", ")[1]),
+                        licenseField.getText(), (Date)fromTimeSpinner.getValue(),
+                        (Date)toTimeSpinner.getValue());
+                bookParkingSpace.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
                 updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
@@ -741,7 +761,16 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
-                controller.modifyParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                // controller.modifyParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                Command<Void> modifyParkingSpaceBooking = new ModifyParkingSpaceBookingCommand(
+                        controller,
+                        currUserEmail,
+                        Integer.parseInt(booking.split(", ")[0]),
+                        Integer.parseInt(booking.split(", ")[1]),
+                        licenseField.getText(),
+                        (Date)fromTimeSpinner.getValue(),
+                        (Date)toTimeSpinner.getValue());
+                modifyParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully modified!");
                 updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
@@ -756,7 +785,13 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
-                controller.cancelParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[2]), Integer.parseInt(booking.split(", ")[1]));
+                // controller.cancelParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[2]), Integer.parseInt(booking.split(", ")[1]));
+                Command<Void> cancelParkingSpaceBooking = new CancelParkingSpaceBookingCommand(
+                        controller,
+                        currUserEmail,
+                        Integer.parseInt(booking.split(", ")[2]),
+                        Integer.parseInt(booking.split(", ")[1]));
+                cancelParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully canceled!");
                 updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
@@ -836,14 +871,14 @@ public class ParkingSystemGUI implements Subscriber {
         addButton.addActionListener(_ -> {
             String location = JOptionPane.showInputDialog(frame, "Enter the location of the new parking lot:");
             if (location == null) return;
-            try {
-                controller.createParkingLot(location);
+            // controller.createParkingLot(location);
+            Command<Void> createParkingLot = new CreateParkingLotCommand(controller, location);
+            Result<Void> result = createParkingLot.execute();
+            if (result == null) {
                 JOptionPane.showMessageDialog(frame, "Parking lot was successfully added!");
                 updateParkingLotManagementModel();
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(frame, "Couldn't add the parking lot: " + e.getMessage());
-            } catch (IllegalArgumentException e) {
-                JOptionPane.showMessageDialog(frame, "Couldn't add the parking lot: " + e.getMessage());
+            } else {
+                JOptionPane.showMessageDialog(frame, "Couldn't add the parking lot: " + result.getMessage());
             }
         });
 
@@ -853,7 +888,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingLot = parkingLotList.getSelectedValue();
-            ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
+            // ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
+            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, Integer.parseInt(parkingLot.split(", ")[0]));
+            ParkingLot p = getParkingLotById.execute().getResult();
             p.disable();
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully disabled!");
             updateParkingLotManagementModel();
@@ -865,7 +902,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingLot = parkingLotList.getSelectedValue();
-            ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
+            // ParkingLot p = controller.getParkingLotById(Integer.parseInt(parkingLot.split(", ")[0]));
+            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, Integer.parseInt(parkingLot.split(", ")[0]));
+            ParkingLot p = getParkingLotById.execute().getResult();
             p.enable();
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully enabled!");
             updateParkingLotManagementModel();
@@ -892,7 +931,9 @@ public class ParkingSystemGUI implements Subscriber {
 
     private void updateparkingSpaceManagementModel() {
         parkingSpaceManagementModel.clear();
-        ParkingLot currPL = controller.getParkingLotById(currParkingLot);
+        // ParkingLot currPL = controller.getParkingLotById(currParkingLot);
+        Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
+        ParkingLot currPL = getParkingLotById.execute().getResult();
         if (currPL != null)
             for (ParkingSpace p : currPL.getSpaces())
                 parkingSpaceManagementModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", " + p.getStatus());
@@ -951,7 +992,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingSpace = parkingSpaceList.getSelectedValue();
-            ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
+            // ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
+            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
+            ParkingSpace p = getParkingLotById.execute().getResult().getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
             p.enable();
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully enabled!");
             updateparkingSpaceManagementModel();
@@ -963,7 +1006,9 @@ public class ParkingSystemGUI implements Subscriber {
                 return;
             }
             String parkingSpace = parkingSpaceList.getSelectedValue();
-            ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
+            // ParkingSpace p = controller.getParkingLotById(currParkingLot).getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
+            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
+            ParkingSpace p = getParkingLotById.execute().getResult().getParkingSpaceById(Integer.parseInt(parkingSpace.split(", ")[0]));
             p.disable();
             JOptionPane.showMessageDialog(frame, "Parking lot was successfully disabled!");
             updateparkingSpaceManagementModel();

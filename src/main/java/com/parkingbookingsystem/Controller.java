@@ -31,7 +31,7 @@ public class Controller {
             db.readAll("ParkingLots").forEach( p -> parkingLotList.add(ParkingLot.deserialize(p)));
             for (String[] str: db.readAll("ParkingSpaces")) {
                 ParkingSpace space = ParkingSpace.deserialize(str);
-                getParkingLotById(space.getParkingLotId()).getSpaces()[space.getParkingSpaceId() - 1] = space;
+                getParkingLotById(space.getParkingLotId()).getResult().getSpaces()[space.getParkingSpaceId() - 1] = space;
             }
         } catch (IOException e) {
             System.err.println("Error reading data from database: " + e.getMessage());
@@ -88,7 +88,7 @@ public class Controller {
         return result;
     }
 
-    public User createUser (String email, String password, String type) throws IllegalArgumentException {
+    public Result<User> createUser (String email, String password, String type) throws IllegalArgumentException {
         if (!User.emailValid(email))
             throw new IllegalArgumentException("Invalid email format.");
 
@@ -109,7 +109,9 @@ public class Controller {
         } catch (Exception e) {
             System.err.println("Error saving user: " + e.getMessage());
         }
-        return user;
+        Result<User> result = new Result<>();
+        result.setResult(user);
+        return result;
     }
 
     public List<Client> getUnvalidatedClients() {
@@ -154,16 +156,20 @@ public class Controller {
         return bookingList.stream().filter(booking -> booking.getUserId().equals(email)).toList();
     }
 
-    public Booking getBookingById(int id) {
+    public Result<Booking> getBookingById(int id) {
+        Result<Booking> result = new Result<>();
         for (Booking booking : bookingList) {
-            if (booking.getBookingId() == id)
-                return booking;
+            if (booking.getBookingId() == id) {
+                result.setResult(booking);
+                return result;
+            }
         }
-        return null;
+        result.setResult(null);
+        return result;
     }
 
     public void addPayment(double amount, String method, int bookingId) {
-        Payment payment = new Payment( getBookingById(bookingId).getUserId(), bookingId, amount, "paid", method);
+        Payment payment = new Payment( getBookingById(bookingId).getResult().getUserId(), bookingId, amount, "paid", method);
         paymentsList.add(payment);
         try {
             db.insert("Payments", payment.serialize());
@@ -233,20 +239,26 @@ public class Controller {
         return parkingLotList;
     }
 
-    public ParkingLot getParkingLotById(int parkingLotId) {
+    public Result<ParkingLot> getParkingLotById(int parkingLotId) {
+        Result<ParkingLot> result = new Result<>();
         for (ParkingLot p: getParkingLotList())
-            if (p.getParkingLotId() == parkingLotId)
-                return p;
-        return null;
+            if (p.getParkingLotId() == parkingLotId) {
+                result.setResult(p);
+                return result;
+            }
+        result.setResult(null);
+        return result;
     }
 
-    public User generateManager() throws IOException {
+    public Result<User> generateManager() throws IOException {
         int randomNum = (int)(Math.random() * 900) + 100;
         int randomPass = (int)(Math.random() * 900) + 100;
         User m = userFactory.createUser("manager" + randomNum + "@parking.system", "" + randomPass, "manager");
         userList.add(m);
         db.insert("Users", m.serialize());
-        return m;
+        Result<User> result = new Result<>();
+        result.setResult(m);
+        return result;
     }
 
     public void createParkingLot(String location) throws IOException {
