@@ -9,7 +9,8 @@ public class Booking {
     private String userId; // email address
     private double remainingAmount;
     private double depositAmount;
-    private Date startTime, endTime;
+    private Date startTime, endTime, checkInTime;
+    private boolean checkedIn;
     private String licensePlate;
     private String status; // paid, pending confirmation, confirmed
 
@@ -19,16 +20,18 @@ public class Booking {
         this.parkingSpaceId = parkingSpaceId;
         this.parkingLotId = parkingLotId;
         long hours = ( endTime.getTime() - startTime.getTime() ) / 1000 * 60 * 60;
-        this.remainingAmount = depositAmount * (hours - 1);
+        this.remainingAmount = depositAmount * hours;
         this.depositAmount = depositAmount;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.checkInTime = new Date(1);
+        this.checkedIn = false;
         this.licensePlate = licensePlate;
         this.status = "pending confirmation";
     }
     
 
-    public Booking(int bookingId, String userId, int parkingSpaceId, int parkingLotId, double remainingAmount, double depositAmount, Date startTime, Date endTime, String licensePlate, String status) {
+    public Booking(int bookingId, String userId, int parkingSpaceId, int parkingLotId, double remainingAmount, double depositAmount, Date startTime, Date endTime, Date checkInTime, boolean checkedIn, String licensePlate, String status) {
         this.bookingId = bookingId;
         this.userId = userId;
         this.parkingSpaceId = parkingSpaceId;
@@ -37,6 +40,8 @@ public class Booking {
         this.depositAmount = depositAmount;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.checkInTime = checkInTime;
+        this.checkedIn = checkedIn;
         this.licensePlate = licensePlate;
         this.status = status;
         if (counter < bookingId) counter = bookingId;
@@ -120,6 +125,23 @@ public class Booking {
         this.endTime = enableTime;
     }
 
+    public Date getCheckInTime() {
+        return this.checkInTime;
+    }
+
+    public void setCheckInTime(Date checkInTime) {
+        this.checkInTime = checkInTime;
+        this.setCheckedIn(true);
+    }
+
+    public boolean isCheckedIn() {
+        return this.checkedIn;
+    }
+
+    public void setCheckedIn(boolean checkedIn) {
+        this.checkedIn = checkedIn;
+    }
+
     public String getStatus() {
         return this.status;
     }
@@ -181,12 +203,22 @@ public class Booking {
             return false;
         }
         Booking booking = (Booking) o;
-        return bookingId == booking.bookingId && Objects.equals(userId, booking.userId) && Objects.equals(parkingSpaceId, booking.parkingSpaceId) && Objects.equals(parkingLotId, booking.parkingLotId) && remainingAmount == booking.remainingAmount && depositAmount == booking.depositAmount && Objects.equals(startTime, booking.startTime) && Objects.equals(endTime, booking.endTime) && Objects.equals(status, booking.status);
+        return bookingId == booking.bookingId &&
+                Objects.equals(userId, booking.userId) &&
+                Objects.equals(parkingSpaceId, booking.parkingSpaceId) &&
+                Objects.equals(parkingLotId, booking.parkingLotId) &&
+                remainingAmount == booking.remainingAmount &&
+                depositAmount == booking.depositAmount &&
+                Objects.equals(startTime, booking.startTime) &&
+                Objects.equals(endTime, booking.endTime) &&
+                Objects.equals(checkInTime, booking.checkInTime) &&
+                checkedIn == booking.checkedIn &&
+                Objects.equals(status, booking.status);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bookingId, userId, parkingSpaceId, parkingLotId, remainingAmount, depositAmount, startTime, endTime, status);
+        return Objects.hash(bookingId, userId, parkingSpaceId, parkingLotId, remainingAmount, depositAmount, startTime, endTime, checkInTime, checkedIn, status);
     }
 
     @Override
@@ -199,7 +231,9 @@ public class Booking {
             ", remainingAmount='" + getRemainingAmount() + "'" +
             ", depositAmount='" + getDepositAmount() + "'" +
             ", startTime='" + getStartTime() + "'" +
-            ", enableTime='" + getEndTime() + "'" +
+            ", endTime='" + getEndTime() + "'" +
+            ", checkInTime='" + getCheckInTime() + "'" +
+            ", checkedIn='" + isCheckedIn() + "'" +
             ", status='" + getStatus() + "'" +
             "}";
     }
@@ -213,7 +247,9 @@ public class Booking {
             Double.toString(remainingAmount), 
             Double.toString(depositAmount), 
             startTime.getTime() + "", 
-            endTime.getTime() + "", 
+            endTime.getTime() + "",
+            checkInTime.getTime() + "",
+            checkedIn ? "checked in" : "not checked in",
             licensePlate,
             status
         };
@@ -228,8 +264,10 @@ public class Booking {
             Double.parseDouble(data[4]), 
             Double.parseDouble(data[5]), 
             new Date(Long.parseLong(data[6])), 
-            new Date(Long.parseLong(data[7])), 
-            data[8],
-            data[9]);
+            new Date(Long.parseLong(data[7])),
+            new Date(Long.parseLong(data[8])),
+            data[9].equals("checked in"),
+            data[10],
+            data[11]);
     }
 }

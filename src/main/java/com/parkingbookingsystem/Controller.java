@@ -179,17 +179,25 @@ public class Controller {
         }
     }
 
-    public List<ParkingSpace> getAvailablePakingSpaceList() {
+    public Result<List<ParkingSpace>> getAvailableParkingSpaceList() {
         ArrayList<ParkingSpace> spaces = new ArrayList<ParkingSpace>();
-        for (ParkingLot p : getParkingLotList())
-            spaces.addAll(p.getAvailablePakingSpaceList());
-        return spaces;
+        for (ParkingLot p : getParkingLotList().getResult())
+            spaces.addAll(p.getAvailableParkingSpaceList());
+        Result<List<ParkingSpace>> result = new Result<>();
+        result.setResult(spaces);
+        return result;
     }
 
     public void bookParkingSpace(String currUserEmail, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
         // to do
         // check if everything is ok, parking spot is available
         // user can book, etc.
+        for (Booking booking : bookingList) {
+            if (booking.getParkingSpaceId() == parkingSpaceId && booking.getParkingLotId() == parkingLotId) {
+                if (booking.getStartTime().before(to) && booking.getEndTime().after(from))
+                    throw new IllegalArgumentException("Parking space is already booked for this time.");
+            }
+        }
         Booking booking = new Booking(currUserEmail,parkingSpaceId,parkingLotId, ((Client) getUserById(currUserEmail).getResult()).getRate(), from, to, licensePlate);
         bookingList.add(booking);
         try {
@@ -287,10 +295,21 @@ public class Controller {
         }
     }
 
-    public void modifyParkingSpaceBooking(String currUserEmail, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
+    public void modifyParkingSpaceBooking(String currUserEmail, int bookingId, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
         // to do
         // check if everything is ok, parking spot is available
         // user can book/modify booking etc.
+        for (Booking booking : bookingList) {
+            if (booking.getParkingSpaceId() == parkingSpaceId && booking.getParkingLotId() == parkingLotId) {
+                if (booking.getUserId().equals(currUserEmail) && booking.getBookingId() == bookingId) {
+                    if (booking.getStartTime().before(from))
+                        throw new IllegalArgumentException("The booking has already started. It cannot be modified anymore.");
+                } else {
+                    if (booking.getStartTime().before(to) && booking.getEndTime().after(from))
+                        throw new IllegalArgumentException("Parking space is already booked for this time.");
+                }
+            }
+        }
         for (int i = 0; i < bookingList.size(); i++) {
             Booking b = bookingList.get(i);
             if (b.getUserId().equals(currUserEmail) && b.getParkingSpaceId() == parkingSpaceId && b.getParkingLotId() == parkingLotId) {
@@ -307,12 +326,14 @@ public class Controller {
         }
     }
 
-    public void cancelParkingSpaceBooking(String currUserEmail, int parkingLotId, int parkingSpaceId) {
+    public void cancelParkingSpaceBooking(String currUserEmail, int parkingLotId, int parkingSpaceId) throws IllegalArgumentException {
         // to do
         // check if user can modify/cancel booking etc.
         for (int i = 0; i < bookingList.size(); i++) {
             Booking b = bookingList.get(i);
             if (b.getUserId().equals(currUserEmail) && b.getParkingSpaceId() == parkingSpaceId && b.getParkingLotId() == parkingLotId) {
+                if (b.getStartTime().before(new Date()))
+                    throw new IllegalArgumentException("The booking has already started. It cannot be cancelled anymore.");
                 bookingList.remove(i);
                 try {
                     db.delete("Bookings", i);
@@ -321,6 +342,15 @@ public class Controller {
                 }
                 break;
             }
+        }
+    }
+
+    public void checkIntoBooking(Booking booking) {
+        booking.setCheckInTime(new Date());
+        try {
+            db.update("Bookings", bookingList.indexOf(booking), booking.serialize());
+        } catch (Exception e) {
+            System.err.println("Error updating booking: " + e.getMessage());
         }
     }
 

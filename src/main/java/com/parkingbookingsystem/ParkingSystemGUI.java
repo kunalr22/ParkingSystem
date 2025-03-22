@@ -29,24 +29,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import com.parkingbookingsystem.commands.AddPaymentCommand;
-import com.parkingbookingsystem.commands.BookParkingSpaceCommand;
-import com.parkingbookingsystem.commands.CancelParkingSpaceBookingCommand;
-import com.parkingbookingsystem.commands.Command;
-import com.parkingbookingsystem.commands.CreateParkingLotCommand;
-import com.parkingbookingsystem.commands.CreateUserCommand;
-import com.parkingbookingsystem.commands.DeleteUserCommand;
-import com.parkingbookingsystem.commands.GenerateManagerCommand;
-import com.parkingbookingsystem.commands.GetAvailableParkingSpaceListCommand;
-import com.parkingbookingsystem.commands.GetBookingByIdCommand;
-import com.parkingbookingsystem.commands.GetBookingsForUserCommand;
-import com.parkingbookingsystem.commands.GetParkingLotByIdCommand;
-import com.parkingbookingsystem.commands.GetParkingLotListCommand;
-import com.parkingbookingsystem.commands.GetUnvalidatedClientsCommand;
-import com.parkingbookingsystem.commands.GetUserCommand;
-import com.parkingbookingsystem.commands.ModifyParkingSpaceBookingCommand;
-import com.parkingbookingsystem.commands.Result;
-import com.parkingbookingsystem.commands.ValidateUserCommand;
+import com.parkingbookingsystem.commands.*;
 
 
 public class ParkingSystemGUI implements Subscriber {
@@ -439,6 +422,7 @@ public class ParkingSystemGUI implements Subscriber {
         for (Client client : unvalidatedClients)
             userApprovalModel.addElement(client.getEmail() + ", " + client.getType() + ", pending approval");
     }
+
     private JPanel createUserApprovalPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -527,6 +511,7 @@ public class ParkingSystemGUI implements Subscriber {
         for (Booking b : bookings)
             paymentModel.addElement(b.getBookingId()+ ", " + b.getParkingSpaceId() + ", " + b.getParkingLotId() + ", from " + b.getStartTime() + ", to " + b.getEndTime() + ", license place: " + b.getLicensePlate());
     }
+
     private JPanel createPaymentPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -624,6 +609,7 @@ public class ParkingSystemGUI implements Subscriber {
         for (ParkingSpace p : availableParkingSpaceList)
             parkingSpaceBookingModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", available");
     }
+
     private JPanel createParkingSpaceBookingPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -639,13 +625,12 @@ public class ParkingSystemGUI implements Subscriber {
         scrollPane.setPreferredSize(new Dimension(300, 150));
         SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
         JSpinner fromTimeSpinner = new JSpinner(model);
-        JSpinner toTimeSpinner = new JSpinner(model);
         fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, "yyyy-MM-dd HH:mm"));
-        toTimeSpinner.setEditor(new JSpinner.DateEditor(toTimeSpinner, "yyyy-MM-dd HH:mm"));
         JLabel fromLabel = new JLabel("From:");
-        JLabel toLabel = new JLabel("To:");
         JLabel licenseLabel = new JLabel("License Plate:");
         JTextField licenseField = new JTextField(15);
+        JLabel paymentMethodLabel = new JLabel("Deposit Payment Method:");
+        JComboBox<String> paymentMethodField = new JComboBox<>(Payment.PAYMENT_TYPES);
         JButton bookButton = new JButton("Book Space");
         JButton backButton = new JButton("Back");
         JLabel spacer = new JLabel(" ");
@@ -671,17 +656,17 @@ public class ParkingSystemGUI implements Subscriber {
 
         gbc.gridy = 3;
         gbc.gridx = 0;
-        panel.add(toLabel, gbc);
-        
-        gbc.gridx = 1;
-        panel.add(toTimeSpinner, gbc);
-
-        gbc.gridy = 4;
-        gbc.gridx = 0;
         panel.add(licenseLabel, gbc);
         
         gbc.gridx = 1;
         panel.add(licenseField, gbc);
+
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        panel.add(paymentMethodLabel, gbc);
+        
+        gbc.gridx = 1;
+        panel.add(paymentMethodField, gbc);
 
         gbc.gridwidth = 2;
         gbc.gridy = 5;
@@ -696,22 +681,26 @@ public class ParkingSystemGUI implements Subscriber {
 
         bookButton.addActionListener(_ -> {
             if (bookingList.getSelectedIndex() == -1) {
-                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                JOptionPane.showMessageDialog(frame, "Please select a parking space first.");
                 return;
             }
-            String booking = bookingList.getSelectedValue(); // shouldn't this be the parking space list?
+            String booking = bookingList.getSelectedValue();
             try {
-                // controller.bookParkingSpace(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                Date fromTime = (Date) fromTimeSpinner.getValue();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(fromTime);
+                calendar.add(Calendar.HOUR, 1);
+                Date toTime = calendar.getTime();
                 Command<Void> bookParkingSpace = new BookParkingSpaceCommand(
                         controller,
                         currUserEmail,
                         Integer.parseInt(booking.split(", ")[0]),
                         Integer.parseInt(booking.split(", ")[1]),
-                        licenseField.getText(), (Date)fromTimeSpinner.getValue(),
-                        (Date)toTimeSpinner.getValue());
+                        licenseField.getText(),
+                        fromTime,
+                        toTime);
                 bookParkingSpace.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
-                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't process the booking: " + e.getMessage());
             }
@@ -729,9 +718,11 @@ public class ParkingSystemGUI implements Subscriber {
         parkingSpaceBookingManagementModel.clear();
         Command<List<Booking>> getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);
         List<Booking> bookings = getBookingsForUser.execute().getResult();
-        // for (Booking b : controller.getBookingsForUser(currUserEmail))
-        for (Booking b : bookings)
-            parkingSpaceBookingManagementModel.addElement(b.getBookingId()+ ", " + b.getParkingSpaceId() + ", " + b.getParkingLotId() + ", from " + b.getStartTime() + ", to " + b.getEndTime() + ", license place: " + b.getLicensePlate());
+        for (Booking b : bookings) {
+            Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, b.getParkingLotId());
+            ParkingLot parkingLot = getParkingLotById.execute().getResult();
+            parkingSpaceBookingManagementModel.addElement("Booking: " + b.getBookingId()+ ", Space: " + b.getParkingSpaceId() + ", LotID: " + b.getParkingLotId() + ", Lot Name: " + parkingLot.getLocation() + ", From: " + b.getStartTime() + ", To: " + b.getEndTime() + ", License Place: " + b.getLicensePlate() + ", Checked in: " + b.isCheckedIn());
+        }
     }
 
     private JPanel createParkingSpaceBookingManagementPanel() {
@@ -746,19 +737,20 @@ public class ParkingSystemGUI implements Subscriber {
         JList<String> bookingList = new JList<>(parkingSpaceBookingManagementModel);
         updateParkingSpaceBookingManagementModel();
         JScrollPane scrollPane = new JScrollPane(bookingList);
-        scrollPane.setPreferredSize(new Dimension(300, 150));
+        scrollPane.setPreferredSize(new Dimension(300, 140));
         JButton cancelButton = new JButton("Cancel Booking");
         JButton modifyButton = new JButton("Apply Changes");
+        JButton extendButton = new JButton("Extend Booking by 1 Hour");
+        JButton checkInButton = new JButton("Check In");
         Dimension buttonSize = new Dimension(200, 25);
         cancelButton.setPreferredSize(buttonSize);
         modifyButton.setPreferredSize(buttonSize);
+        extendButton.setPreferredSize(buttonSize);
+        checkInButton.setPreferredSize(buttonSize);
         SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
         JSpinner fromTimeSpinner = new JSpinner(model);
-        JSpinner toTimeSpinner = new JSpinner(model);
         fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, "yyyy-MM-dd HH:mm"));
-        toTimeSpinner.setEditor(new JSpinner.DateEditor(toTimeSpinner, "yyyy-MM-dd HH:mm"));
         JLabel fromLabel = new JLabel("New From:");
-        JLabel toLabel = new JLabel("New To:");
         JLabel licenseLabel = new JLabel("New License Plate:");
         JTextField licenseField = new JTextField(15);
         JButton backButton = new JButton("Back");
@@ -785,19 +777,12 @@ public class ParkingSystemGUI implements Subscriber {
 
         gbc.gridy = 3;
         gbc.gridx = 0;
-        panel.add(toLabel, gbc);
-        
-        gbc.gridx = 1;
-        panel.add(toTimeSpinner, gbc);
-
-        gbc.gridy = 4;
-        gbc.gridx = 0;
         panel.add(licenseLabel, gbc);
         
         gbc.gridx = 1;
         panel.add(licenseField, gbc);
 
-        gbc.gridy = 5;
+        gbc.gridy = 4;
         gbc.gridx = 0;
         panel.add(cancelButton, gbc);
 
@@ -805,7 +790,14 @@ public class ParkingSystemGUI implements Subscriber {
         panel.add(modifyButton, gbc);
         
         gbc.gridx = 0;
+        gbc.gridy = 5;
+        panel.add(extendButton, gbc);
+
+        gbc.gridx = 1;
+        panel.add(checkInButton, gbc);
+
         gbc.gridy = 6;
+        gbc.gridx = 0;
         gbc.gridwidth = 2;
         panel.add(spacer, gbc);
         
@@ -819,18 +811,22 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
-                // controller.modifyParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[0]), Integer.parseInt(booking.split(", ")[1]), licenseField.getText(), (Date)fromTimeSpinner.getValue(), (Date)toTimeSpinner.getValue());
+                Date fromTime = (Date) fromTimeSpinner.getValue();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(fromTime);
+                calendar.add(Calendar.HOUR, 1);
+                Date toTime = calendar.getTime();
                 Command<Void> modifyParkingSpaceBooking = new ModifyParkingSpaceBookingCommand(
                         controller,
                         currUserEmail,
-                        Integer.parseInt(booking.split(", ")[0]),
-                        Integer.parseInt(booking.split(", ")[1]),
+                        Integer.parseInt(booking.split(", ")[0].substring(9)),
+                        Integer.parseInt(booking.split(", ")[1].substring(7)),
+                        Integer.parseInt(booking.split(", ")[2].substring(7)),
                         licenseField.getText(),
-                        (Date)fromTimeSpinner.getValue(),
-                        (Date)toTimeSpinner.getValue());
+                        fromTime,
+                        toTime);
                 modifyParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully modified!");
-                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't modify the booking: " + e.getMessage());
             }
@@ -843,17 +839,76 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
-                // controller.cancelParkingSpaceBooking(currUserEmail, Integer.parseInt(booking.split(", ")[2]), Integer.parseInt(booking.split(", ")[1]));
                 Command<Void> cancelParkingSpaceBooking = new CancelParkingSpaceBookingCommand(
                         controller,
                         currUserEmail,
-                        Integer.parseInt(booking.split(", ")[2]),
-                        Integer.parseInt(booking.split(", ")[1]));
+                        Integer.parseInt(booking.split(", ")[2].substring(7)),
+                        Integer.parseInt(booking.split(", ")[1].substring(7)));
                 cancelParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully canceled!");
-                // updateParkingSpaceBookingManagementModel();
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't cancel the booking: " + e.getMessage());
+            }
+        });
+
+        extendButton.addActionListener(_ -> {
+            if (bookingList.getSelectedIndex() == -1) {
+                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                return;
+            }
+            String booking = bookingList.getSelectedValue();
+            try {
+                Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0].substring(9)));
+                Booking bookingObj = getBookingById.execute().getResult();
+
+                if (bookingObj.getEndTime().before(new Date())) {
+                    throw new IllegalArgumentException("You can't extend a booking that has already ended.");
+                }
+
+                Date newEndTime = new Date(bookingObj.getEndTime().getTime() + 3600000); // Add 1 hour
+                Command<Void> modifyParkingSpaceBooking = new ModifyParkingSpaceBookingCommand(
+                        controller,
+                        currUserEmail,
+                        bookingObj.getBookingId(),
+                        bookingObj.getParkingSpaceId(),
+                        bookingObj.getParkingLotId(),
+                        bookingObj.getLicensePlate(),
+                        bookingObj.getStartTime(),
+                        newEndTime);
+                modifyParkingSpaceBooking.execute();
+                JOptionPane.showMessageDialog(frame, "Booking was successfully extended by 1 hour!");
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(frame, "Couldn't extend the booking: " + e.getMessage());
+            }
+        });
+
+        checkInButton.addActionListener(_ -> {
+            if (bookingList.getSelectedIndex() == -1) {
+                JOptionPane.showMessageDialog(frame, "Please select a booking first.");
+                return;
+            }
+            String booking = bookingList.getSelectedValue();
+            if (booking.split(", ")[7].substring(12).equals("true")) {
+                JOptionPane.showMessageDialog(frame, "You have already checked in!");
+                return;
+            }
+            try {
+                Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0].substring(9)));
+                Booking bookingObj = getBookingById.execute().getResult();
+                if (bookingObj.getStartTime().before(new Date())) {
+                    Command<Void> checkIn = new CheckInToBookingCommand(
+                            controller,
+                            bookingObj);
+                    checkIn.execute();
+                    if (bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() < 3600000)
+                        JOptionPane.showMessageDialog(frame, "You have successfully checked in!");
+                    else
+                        JOptionPane.showMessageDialog(frame, "You have successfully checked in! No-show in the first hour so deposit fee will not be deducted.");
+                } else {
+                    throw new IllegalArgumentException("You can't check in before the booking time.");
+                }
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(frame, "Couldn't check in: " + e.getMessage());
             }
         });
 
