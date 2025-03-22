@@ -1,23 +1,46 @@
 package com.parkingbookingsystem;
 
-import com.formdev.flatlaf.FlatLightLaf;
-import com.parkingbookingsystem.commands.*;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Deque;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import com.formdev.flatlaf.FlatLightLaf;
+import com.parkingbookingsystem.commands.Command;
+import com.parkingbookingsystem.commands.GetUserCommand;
 
 
 public class ParkingSystemGUI implements Subscriber {
-    private Controller controller = new Controller();
-    private Database db = Database.getInstance();
-    private JFrame frame;
+    private final Controller controller = new Controller();
+    private final Database db = Database.getInstance();
+    private final JFrame frame;
     private String currUserEmail;
     private int currParkingLot;
-    private CardLayout cardLayout;
-    private JPanel mainPanel;
-    private Deque<String> prevPanels = new ArrayDeque<String>();
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel mainPanel;
+    private final Deque<String> prevPanels = new ArrayDeque<>();
     private DefaultListModel<String> 
         parkingSpaceBookingManagementModel, 
         parkingLotManagementModel,
@@ -34,7 +57,6 @@ public class ParkingSystemGUI implements Subscriber {
         frame.setSize(550, 500);
         frame.setResizable(false);
         
-        cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
         
         mainPanel.add(createLoginPanel(), "Login");
@@ -107,12 +129,10 @@ public class ParkingSystemGUI implements Subscriber {
             if (user != null && user.canLogin(password)) {
                 currUserEmail = email;
                 JOptionPane.showMessageDialog(frame, "Login successful!");
-                if (user.getType().equals("Super Manager")) {
-                    cardLayout.show(mainPanel, "SuperManager");
-                } else if (user.getType().equals("Manager")) {
-                    cardLayout.show(mainPanel, "Manager");
-                } else {
-                    cardLayout.show(mainPanel, "Client");
+                switch (user.getType()) {
+                    case "Super Manager" -> cardLayout.show(mainPanel, "SuperManager");
+                    case "Manager" -> cardLayout.show(mainPanel, "Manager");
+                    default -> cardLayout.show(mainPanel, "Client");
                 }
             } else {
                 JOptionPane.showMessageDialog(frame, "Invalid credentials");
@@ -1034,20 +1054,16 @@ public class ParkingSystemGUI implements Subscriber {
     public void update(String tableName) {
         // Update the corresponding model based on the table name
         switch (tableName) {
-            case "Users":
-                updateUserApprovalModel();
-                break;
-            case "Bookings":
+            case "Users" -> updateUserApprovalModel();
+            case "Bookings" -> {
                 updateParkingSpaceBookingManagementModel();
                 updateParkingSpaceBookingModel();
-                break;
-            case "ParkingLots":
+            }
+            case "ParkingLots" -> {
                 updateParkingLotManagementModel();
                 updateparkingSpaceManagementModel();
-                break;
-            case "Payments":
-                updatePaymentModel();
-                break;
+            }
+            case "Payments" -> updatePaymentModel();
         }
     }
 }
