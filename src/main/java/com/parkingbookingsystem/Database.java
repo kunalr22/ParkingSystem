@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Database {
     private static Database instance;
-    private String baseFilePath = "Path/To/Database";
+    private String baseFilePath = "src/main/java/data/DB";
     private String delimiter = ",";
     private List<Subscriber> subscribers = new ArrayList<Subscriber>();
 
