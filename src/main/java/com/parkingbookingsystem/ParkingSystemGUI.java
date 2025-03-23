@@ -920,6 +920,9 @@ public class ParkingSystemGUI implements Subscriber {
             try {
                 Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0].substring(9)));
                 Booking bookingObj = getBookingById.execute().getResult();
+                if (bookingObj.getEndTime().before(new Date())) {
+                    throw new IllegalArgumentException("You can't check in after the booking has ended.");
+                }
                 if (bookingObj.getStartTime().before(new Date())) {
                     Command<Void> checkIn = new CheckInToBookingCommand(
                             controller,
