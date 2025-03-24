@@ -725,7 +725,9 @@ public class ParkingSystemGUI implements Subscriber {
                         fromTime,
                         toTime);
                 bookParkingSpace.execute();
-                JOptionPane.showMessageDialog(frame, "Parking Space was successfully booked!");
+                Command<User> getUserById = new GetUserCommand(controller, currUserEmail);
+                Client client = (Client) getUserById.execute().getResult();
+                JOptionPane.showMessageDialog(frame, String.format("Parking space was successfully booked! A deposit of $%.2f was made.", client.getRate()));
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't process the booking: " + e.getMessage());
             }
