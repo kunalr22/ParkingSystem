@@ -352,6 +352,11 @@ public class Controller {
 
     public void checkIntoBooking(Booking booking) {
         booking.setCheckInTime(new Date());
+        ParkingLot lot = getParkingLotById(booking.getParkingLotId()).getResult();
+        ParkingSpace space = lot.getParkingSpaceById(booking.getParkingSpaceId());
+        Sensor sensor = space.getSensor();
+        sensor.setCarDetected(true);
+        sensor.scanCarInfo();
         try {
             db.update("Bookings", bookingList.indexOf(booking), booking.serialize());
         } catch (Exception e) {

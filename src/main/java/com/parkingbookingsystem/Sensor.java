@@ -29,6 +29,7 @@ public class Sensor {
     }
     
     public String scanCarInfo() {
+        // scans info of car (can't really implement this
         return null;
     }
 }
