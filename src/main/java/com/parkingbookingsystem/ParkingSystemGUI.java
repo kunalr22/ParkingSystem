@@ -35,6 +35,7 @@ import com.parkingbookingsystem.commands.*;
 public class ParkingSystemGUI implements Subscriber {
     private final Controller controller = new Controller();
     private final Database db = Database.getInstance();
+    private final Invoker invoker = new Invoker();
     private final JFrame frame;
     private String currUserEmail;
     private int currParkingLot;
@@ -133,7 +134,8 @@ public class ParkingSystemGUI implements Subscriber {
             String password = new String(passwordField.getPassword());
             // User user = controller.getUserById(email);
             Command<User> getUser = new GetUserCommand(controller, email);
-            User user = getUser.execute().getResult();
+            invoker.setCommand(getUser);
+            User user = (User) invoker.executeCommand().getResult();
             if (user != null && user.canLogin(password)) {
                 currUserEmail = email;
                 JOptionPane.showMessageDialog(frame, "Login successful!");
@@ -213,7 +215,8 @@ public class ParkingSystemGUI implements Subscriber {
 
             // controller.createUser(email, password, type);
             Command<User> createUser = new CreateUserCommand(controller, email, password, type);
-            Result<User> result = createUser.execute();
+            invoker.setCommand(createUser);
+            Result<User> result = (Result<User>) invoker.executeCommand();
             if (result.getResult() != null) {
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 cardLayout.show(mainPanel, "Login");
@@ -384,7 +387,8 @@ public class ParkingSystemGUI implements Subscriber {
         generateManagerButton.addActionListener(_ -> {
             // User newManager = controller.generateManager();
             Command<User> generateManager = new GenerateManagerCommand(controller);
-            Result<User> result = generateManager.execute();
+            invoker.setCommand(generateManager);
+            Result<User> result = (Result<User>) invoker.executeCommand().getResult();
             User newManager = result.getResult();
             if (newManager != null) {
                 JOptionPane.showMessageDialog(frame, "New manager account generated: Username: " + newManager.getEmail() + ", Password: " + newManager.getPassword());
@@ -417,7 +421,8 @@ public class ParkingSystemGUI implements Subscriber {
     private void updateUserApprovalModel() {
         userApprovalModel.clear();
         Command<List<Client>> getUnvalidatedClients = new GetUnvalidatedClientsCommand(controller);
-        List<Client> unvalidatedClients = getUnvalidatedClients.execute().getResult();
+        invoker.setCommand(getUnvalidatedClients);
+        List<Client> unvalidatedClients = (List<Client>) invoker.executeCommand().getResult();
         // for (Client client : controller.getUnvalidatedClients())
         for (Client client : unvalidatedClients)
             userApprovalModel.addElement(client.getEmail() + ", " + client.getType() + ", pending approval");
@@ -475,7 +480,8 @@ public class ParkingSystemGUI implements Subscriber {
                 String user = userList.getSelectedValue();
                 // controller.validateUser(user.split(", ")[0]);
                 Command<Void> validateUser = new ValidateUserCommand(controller, user.split(", ")[0]);
-                validateUser.execute();
+                invoker.setCommand(validateUser);
+                invoker.executeCommand();
                 JOptionPane.showMessageDialog(frame, "You approved user: " + user.split(", ")[0] + "!");
                 // updateUserApprovalModel();
             } else {
@@ -488,7 +494,8 @@ public class ParkingSystemGUI implements Subscriber {
                 String user = userList.getSelectedValue();
                 // controller.deleteUser(user.split(", ")[0]);
                 Command<Void> deleteUser = new DeleteUserCommand(controller, user.split(", ")[0]);
-                deleteUser.execute();
+                invoker.setCommand(deleteUser);
+                invoker.executeCommand();
                 JOptionPane.showMessageDialog(frame, "You deleted user: " + user.split(", ")[0] + "!");
                 // updateUserApprovalModel();
             } else {
@@ -506,7 +513,8 @@ public class ParkingSystemGUI implements Subscriber {
     private void updatePaymentModel() {
         paymentModel.clear();
         Command<List<Booking>> getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);
-        List<Booking> bookings = getBookingsForUser.execute().getResult();
+        invoker.setCommand(getBookingsForUser);
+        List<Booking> bookings = (List<Booking>) invoker.executeCommand().getResult();
         // for (Booking b : controller.getBookingsForUser(currUserEmail))
         for (Booking b : bookings)
             paymentModel.addElement(b.getBookingId()+ ", " + b.getParkingSpaceId() + ", " + b.getParkingLotId() + ", from " + b.getStartTime() + ", to " + b.getEndTime() + ", license place: " + b.getLicensePlate());
@@ -584,7 +592,8 @@ public class ParkingSystemGUI implements Subscriber {
             if (!e.getValueIsAdjusting() && bookingList.getSelectedIndex() != -1) {
                 String booking = bookingList.getSelectedValue();
                 Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
-                Booking bookingObj = getBookingById.execute().getResult();
+                invoker.setCommand(getBookingById);
+                Booking bookingObj = (Booking) invoker.executeCommand().getResult();
                 if (bookingObj.getEndTime().after(new Date())) {
                     JOptionPane.showMessageDialog(frame, "You can't pay for a booking that hasn't ended yet.");
                     bookingList.clearSelection();
@@ -613,9 +622,11 @@ public class ParkingSystemGUI implements Subscriber {
            }
            String booking = bookingList.getSelectedValue();
            Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0]));
-           Booking bookingObj = getBookingById.execute().getResult();
+           invoker.setCommand(getBookingById);
+           Booking bookingObj = (Booking) invoker.executeCommand().getResult();
            Command<Void> addPayment = new AddPaymentCommand(controller, bookingObj.getRemainingAmount(), (String) paymentMethodField.getSelectedItem(), bookingObj.getBookingId());
-           addPayment.execute();
+           invoker.setCommand(addPayment);
+           invoker.executeCommand();
            JOptionPane.showMessageDialog(frame, "Payment successful. You paid: " + String.format("$%.2f", bookingObj.getRemainingAmount()));
         });
 
@@ -629,10 +640,12 @@ public class ParkingSystemGUI implements Subscriber {
     private void updateParkingSpaceBookingModel() {
         parkingSpaceBookingModel.clear();
         Command<List<ParkingSpace>> getAvailableParkingSpaceList = new GetAvailableParkingSpaceListCommand(controller);
-        List<ParkingSpace> availableParkingSpaceList = getAvailableParkingSpaceList.execute().getResult();
+        invoker.setCommand(getAvailableParkingSpaceList);
+        List<ParkingSpace> availableParkingSpaceList = (List<ParkingSpace>) invoker.executeCommand().getResult();
         // for (ParkingSpace p : controller.getAvailableParkingSpaceList())
-        for (ParkingSpace p : availableParkingSpaceList)
+        for (ParkingSpace p : availableParkingSpaceList) {
             parkingSpaceBookingModel.addElement(p.getParkingSpaceId() + ", " + p.getParkingLotId() + ", available");
+        }
     }
 
     private JPanel createParkingSpaceBookingPanel() {
@@ -711,6 +724,15 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
+                if (licenseField.getText().isEmpty()) {
+                    throw new IllegalArgumentException("License plate can't be empty.");
+                }
+                if (licenseField.getText().length() != 7) {
+                    throw new IllegalArgumentException("License plate must be 7 characters long.");
+                }
+                if (!licenseField.getText().matches("^[A-Za-z]{4}\\d{3}$")) {
+                    throw new IllegalArgumentException("License plate must be in the standard Ontario Passenger Plate format: ABCD123");
+                }
                 Date fromTime = (Date) fromTimeSpinner.getValue();
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(fromTime);
@@ -724,9 +746,11 @@ public class ParkingSystemGUI implements Subscriber {
                         licenseField.getText(),
                         fromTime,
                         toTime);
-                bookParkingSpace.execute();
+                invoker.setCommand(bookParkingSpace);
+                invoker.executeCommand();
                 Command<User> getUserById = new GetUserCommand(controller, currUserEmail);
-                Client client = (Client) getUserById.execute().getResult();
+                invoker.setCommand(getUserById);
+                Client client = (Client) invoker.executeCommand().getResult();
                 JOptionPane.showMessageDialog(frame, String.format("Parking space was successfully booked! A deposit of $%.2f was made.", client.getRate()));
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't process the booking: " + e.getMessage());
@@ -744,10 +768,13 @@ public class ParkingSystemGUI implements Subscriber {
     private void updateParkingSpaceBookingManagementModel() {
         parkingSpaceBookingManagementModel.clear();
         Command<List<Booking>> getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);
-        List<Booking> bookings = getBookingsForUser.execute().getResult();
+        invoker.setCommand(getBookingsForUser);
+        List<Booking> bookings = (List<Booking>) invoker.executeCommand().getResult();
         for (Booking b : bookings) {
             Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, b.getParkingLotId());
-            ParkingLot parkingLot = getParkingLotById.execute().getResult();
+            invoker.setCommand(getParkingLotById);
+            ParkingLot parkingLot = (ParkingLot) invoker.executeCommand().getResult();
+//            ParkingLot parkingLot = getParkingLotById.execute().getResult();
             parkingSpaceBookingManagementModel.addElement("Booking: " + b.getBookingId()+ ", Space: " + b.getParkingSpaceId() + ", LotID: " + b.getParkingLotId() + ", Lot Name: " + parkingLot.getLocation() + ", From: " + b.getStartTime() + ", To: " + b.getEndTime() + ", License Place: " + b.getLicensePlate() + ", Checked in: " + b.isCheckedIn());
         }
     }
@@ -838,6 +865,15 @@ public class ParkingSystemGUI implements Subscriber {
             }
             String booking = bookingList.getSelectedValue();
             try {
+                if (licenseField.getText().isEmpty()) {
+                    throw new IllegalArgumentException("License plate can't be empty.");
+                }
+                if (licenseField.getText().length() != 7) {
+                    throw new IllegalArgumentException("License plate must be 7 characters long.");
+                }
+                if (!licenseField.getText().matches("^[A-Za-z]{4}\\d{3}$")) {
+                    throw new IllegalArgumentException("License plate must be in the standard Ontario Passenger Plate format: ABCD123");
+                }
                 Date fromTime = (Date) fromTimeSpinner.getValue();
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(fromTime);
@@ -852,7 +888,9 @@ public class ParkingSystemGUI implements Subscriber {
                         licenseField.getText(),
                         fromTime,
                         toTime);
-                modifyParkingSpaceBooking.execute();
+                invoker.setCommand(modifyParkingSpaceBooking);
+                invoker.executeCommand();
+//                modifyParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully modified!");
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't modify the booking: " + e.getMessage());
@@ -871,7 +909,8 @@ public class ParkingSystemGUI implements Subscriber {
                         currUserEmail,
                         Integer.parseInt(booking.split(", ")[2].substring(7)),
                         Integer.parseInt(booking.split(", ")[1].substring(7)));
-                cancelParkingSpaceBooking.execute();
+                invoker.setCommand(cancelParkingSpaceBooking);
+                invoker.executeCommand();
                 JOptionPane.showMessageDialog(frame, "Parking Space was successfully canceled!");
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't cancel the booking: " + e.getMessage());
@@ -886,7 +925,9 @@ public class ParkingSystemGUI implements Subscriber {
             String booking = bookingList.getSelectedValue();
             try {
                 Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0].substring(9)));
-                Booking bookingObj = getBookingById.execute().getResult();
+                invoker.setCommand(getBookingById);
+                Booking bookingObj = (Booking) invoker.executeCommand().getResult();
+//                Booking bookingObj = getBookingById.execute().getResult();
 
                 if (bookingObj.getEndTime().before(new Date())) {
                     throw new IllegalArgumentException("You can't extend a booking that has already ended.");
@@ -902,7 +943,9 @@ public class ParkingSystemGUI implements Subscriber {
                         bookingObj.getLicensePlate(),
                         bookingObj.getStartTime(),
                         newEndTime);
-                modifyParkingSpaceBooking.execute();
+                invoker.setCommand(modifyParkingSpaceBooking);
+                invoker.executeCommand();
+//                modifyParkingSpaceBooking.execute();
                 JOptionPane.showMessageDialog(frame, "Booking was successfully extended by 1 hour!");
             } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(frame, "Couldn't extend the booking: " + e.getMessage());
@@ -921,7 +964,9 @@ public class ParkingSystemGUI implements Subscriber {
             }
             try {
                 Command<Booking> getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(", ")[0].substring(9)));
-                Booking bookingObj = getBookingById.execute().getResult();
+                invoker.setCommand(getBookingById);
+                Booking bookingObj = (Booking) invoker.executeCommand().getResult();
+//                Booking bookingObj = getBookingById.execute().getResult();
                 if (bookingObj.getEndTime().before(new Date())) {
                     throw new IllegalArgumentException("You can't check in after the booking has ended.");
                 }
@@ -929,7 +974,9 @@ public class ParkingSystemGUI implements Subscriber {
                     Command<Void> checkIn = new CheckInToBookingCommand(
                             controller,
                             bookingObj);
-                    checkIn.execute();
+                    invoker.setCommand(checkIn);
+                    invoker.executeCommand();
+//                    checkIn.execute();
                     if (bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() < 3600000)
                         JOptionPane.showMessageDialog(frame, "You have successfully checked in!");
                     else
@@ -953,7 +1000,9 @@ public class ParkingSystemGUI implements Subscriber {
     private void updateParkingLotManagementModel() {
         parkingLotManagementModel.clear();
         Command<List<ParkingLot>> getParkingLotList = new GetParkingLotListCommand(controller);
-        List<ParkingLot> parkingLots = getParkingLotList.execute().getResult();
+        invoker.setCommand(getParkingLotList);
+        List<ParkingLot> parkingLots = (List<ParkingLot>) invoker.executeCommand().getResult();
+//        List<ParkingLot> parkingLots = getParkingLotList.execute().getResult();
         // for (ParkingLot p : controller.getParkingLotList())
         for (ParkingLot p : parkingLots)
             parkingLotManagementModel.addElement(p.getParkingLotId() + ", " + p.getLocation() + ", " + (p.isEnabled()? "enabled" : "disabled"));
@@ -1020,7 +1069,9 @@ public class ParkingSystemGUI implements Subscriber {
             if (location == null) return;
             // controller.createParkingLot(location);
             Command<Void> createParkingLot = new CreateParkingLotCommand(controller, location);
-            Result<Void> result = createParkingLot.execute();
+            invoker.setCommand(createParkingLot);
+            Result<Void> result = (Result<Void>) invoker.executeCommand();
+//            Result<Void> result = createParkingLot.execute();
             if (result == null) {
                 JOptionPane.showMessageDialog(frame, "Parking lot was successfully added!");
                 // updateParkingLotManagementModel();
@@ -1074,7 +1125,9 @@ public class ParkingSystemGUI implements Subscriber {
         parkingSpaceManagementModel.clear();
         // ParkingLot currPL = controller.getParkingLotById(currParkingLot);
         Command<ParkingLot> getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);
-        ParkingLot currPL = getParkingLotById.execute().getResult();
+        invoker.setCommand(getParkingLotById);
+        ParkingLot currPL = (ParkingLot) invoker.executeCommand().getResult();
+//        ParkingLot currPL = getParkingLotById.execute().getResult();
         
         if (currPL != null)
             for (ParkingSpace p : currPL.getSpaces())

@@ -63,7 +63,7 @@ public class Controller {
 
         // create a super manager if it doesn't exist
         if (!supermanagerExists) {
-            User superManager = UserFactory.createUser("super@parking.system", "123", "Super Manager");
+            User superManager = UserFactory.createUser("super@parking.system", "SManager@1234", "Super Manager");
             userList.add(superManager);
             try {
                 db.insert("Users", superManager.serialize());
@@ -382,8 +382,8 @@ public class Controller {
     }
 
     public Result<User> generateManager() throws IOException {
-        int randomNum = (int)(Math.random() * 900) + 100;
-        int randomPass = (int)(Math.random() * 900) + 100;
+        int randomNum = (int)(Math.random() * 9000) + 1000;
+        int randomPass = (int)(Math.random() * 90000000) + 10000000;
         User m = UserFactory.createUser("manager" + randomNum + "@parking.system", "" + randomPass, Manager.TYPE);
         userList.add(m);
         db.insert("Users", m.serialize());
