@@ -76,6 +76,6 @@ public class User {
     }
 
     public static boolean clientEmailValid(String email) {
-        return email.contains("@") && email.contains(".") && !email.startsWith("manager");
+        return email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$") && !email.endsWith("@parking.system");
     }
 }

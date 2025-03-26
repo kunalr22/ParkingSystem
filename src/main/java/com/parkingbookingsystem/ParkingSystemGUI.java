@@ -388,7 +388,7 @@ public class ParkingSystemGUI implements Subscriber {
             // User newManager = controller.generateManager();
             Command<User> generateManager = new GenerateManagerCommand(controller);
             invoker.setCommand(generateManager);
-            Result<User> result = (Result<User>) invoker.executeCommand().getResult();
+            Result<User> result = (Result<User>) invoker.executeCommand();
             User newManager = result.getResult();
             if (newManager != null) {
                 JOptionPane.showMessageDialog(frame, "New manager account generated: Username: " + newManager.getEmail() + ", Password: " + newManager.getPassword());
