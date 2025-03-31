@@ -24,3 +24,6 @@ target/
 *.jar
 *.war
 *.ear
+
+# DB Files #
+src/main/java/data/

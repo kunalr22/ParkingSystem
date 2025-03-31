@@ -731,7 +731,7 @@ public class ParkingSystemGUI implements Subscriber {
                     throw new IllegalArgumentException("License plate must be 7 characters long.");
                 }
                 if (!licenseField.getText().matches("^[A-Za-z]{4}\\d{3}$")) {
-                    throw new IllegalArgumentException("License plate must be in the standard Ontario Passenger Plate format: ABCD123");
+                    throw new IllegalArgumentException("License plate must be in the standard Ontario Passenger Plate format. For example: CEFN107");
                 }
                 Date fromTime = (Date) fromTimeSpinner.getValue();
                 Calendar calendar = Calendar.getInstance();
