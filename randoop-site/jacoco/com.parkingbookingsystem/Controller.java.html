@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Controller.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">parking-booking-system</a> &gt; <a href="index.source.html" class="el_package">com.parkingbookingsystem</a> &gt; <span class="el_source">Controller.java</span></div><h1>Controller.java</h1><pre class="source lang-java linenums">package com.parkingbookingsystem;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.parkingbookingsystem.commands.Result;
+
+public class Controller {
+    private final Database db;
+    private ArrayList&lt;ParkingLot&gt; parkingLotList;
+    private ArrayList&lt;Booking&gt; bookingList;
+    private ArrayList&lt;User&gt; userList;
+    private ArrayList&lt;Payment&gt; paymentsList;
+
+
+<span class="fc" id="L18">    public Controller() {</span>
+<span class="fc" id="L19">        db = Database.getInstance();</span>
+        
+        // read all data from database and initialize the system
+<span class="fc" id="L22">        parkingLotList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L23">        bookingList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L24">        userList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L25">        paymentsList = new ArrayList&lt;&gt;();</span>
+
+        try {
+<span class="fc" id="L28">            db.readAll(&quot;ParkingLots&quot;).forEach( p -&gt; parkingLotList.add(ParkingLot.deserialize(p)));</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            for (String[] str: db.readAll(&quot;ParkingSpaces&quot;)) {</span>
+<span class="fc" id="L30">                ParkingSpace space = ParkingSpace.deserialize(str);</span>
+<span class="fc" id="L31">                getParkingLotById(space.getParkingLotId()).getResult().getSpaces()[space.getParkingSpaceId() - 1] = space;</span>
+<span class="fc" id="L32">            }</span>
+<span class="nc" id="L33">        } catch (IOException e) {</span>
+<span class="nc" id="L34">            System.err.println(&quot;Error reading data from database: &quot; + e.getMessage());</span>
+<span class="fc" id="L35">        }</span>
+
+        try {
+<span class="fc" id="L38">            db.readAll(&quot;Users&quot;).forEach(u -&gt; userList.add(UserFactory.createUser(u)));</span>
+<span class="nc" id="L39">        } catch (IOException e) {</span>
+<span class="nc" id="L40">            System.err.println(&quot;Error reading data from database: &quot; + e.getMessage());</span>
+<span class="fc" id="L41">        }</span>
+
+        try {
+<span class="nc" id="L44">            db.readAll(&quot;Payments&quot;).forEach(p -&gt; paymentsList.add(Payment.deserialize(p)));</span>
+<span class="fc" id="L45">        } catch (IOException e) {</span>
+<span class="fc" id="L46">            System.err.println(&quot;Error reading data from database: &quot; + e.getMessage());</span>
+<span class="nc" id="L47">        }</span>
+
+        try {
+<span class="nc" id="L50">            db.readAll(&quot;Bookings&quot;).forEach(b -&gt; bookingList.add(Booking.deserialize(b)));</span>
+<span class="fc" id="L51">        } catch (IOException e) {</span>
+<span class="fc" id="L52">            System.err.println(&quot;Error reading data from database: &quot; + e.getMessage());</span>
+<span class="nc" id="L53">        }</span>
+
+        // check if a super manager exists
+<span class="fc" id="L56">        boolean supermanagerExists = false;</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        for (User u: userList) {</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (u.getType().equals(&quot;Super Manager&quot;)) {</span>
+<span class="fc" id="L59">                supermanagerExists = true;</span>
+<span class="fc" id="L60">                break;</span>
+            }
+<span class="nc" id="L62">        }</span>
+
+        // create a super manager if it doesn't exist
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (!supermanagerExists) {</span>
+<span class="nc" id="L66">            User superManager = UserFactory.createUser(&quot;super@parking.system&quot;, &quot;SManager@1234&quot;, &quot;Super Manager&quot;);</span>
+<span class="nc" id="L67">            userList.add(superManager);</span>
+            try {
+<span class="nc" id="L69">                db.insert(&quot;Users&quot;, superManager.serialize());</span>
+<span class="nc" id="L70">            } catch (IOException e) {</span>
+<span class="nc" id="L71">                System.err.println(&quot;Error saving super manager: &quot; + e.getMessage());</span>
+<span class="nc" id="L72">            }</span>
+        }
+<span class="fc" id="L74">    }</span>
+    
+    public Result&lt;User&gt; getUserById(String email) {
+<span class="fc" id="L77">        Result&lt;User&gt; result = new Result&lt;&gt;();</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (User user : userList) {</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (user.getEmail().equals(email)) {</span>
+<span class="nc" id="L80">                result.setResult(user);</span>
+<span class="nc" id="L81">                return result;</span>
+            }
+<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">        result.setResult(null);</span>
+<span class="fc" id="L85">        return result;</span>
+    }
+
+    public Result&lt;User&gt; createUser (String email, String password, String type) throws IllegalArgumentException {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (!User.clientEmailValid(email))</span>
+<span class="fc" id="L90">            throw new IllegalArgumentException(&quot;Invalid email format.&quot;);</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (!User.passwordValid(password))</span>
+<span class="nc" id="L93">            throw new IllegalArgumentException(&quot;Password must contain at least 8 characters, including uppercase, lowercase, numbers, and special characters.&quot;);</span>
+        
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        for (User user : userList) {</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (user.getEmail().equals(email))</span>
+<span class="nc" id="L97">                throw new IllegalArgumentException(&quot;Email already exists.&quot;);</span>
+<span class="nc" id="L98">        }</span>
+
+        // create a new client object and save it to database
+<span class="nc" id="L101">        User user = UserFactory.createUser(email, password, type); //save this on database</span>
+<span class="nc" id="L102">        userList.add(user);</span>
+        try {
+<span class="nc" id="L104">            db.insert(&quot;Users&quot;, user.serialize());</span>
+<span class="nc" id="L105">        } catch (IOException e) {</span>
+<span class="nc" id="L106">            System.err.println(&quot;Error saving user: &quot; + e.getMessage());</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">        Result&lt;User&gt; result = new Result&lt;&gt;();</span>
+<span class="nc" id="L109">        result.setResult(user);</span>
+<span class="nc" id="L110">        return result;</span>
+    }
+
+    public Result&lt;List&lt;Client&gt;&gt; getUnvalidatedClients() {
+<span class="fc" id="L114">        ArrayList&lt;Client&gt; clients = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        for (User user : userList) {</span>
+<span class="pc bpc" id="L116" title="3 of 4 branches missed.">            if (user instanceof Client &amp;&amp; !((Client) user).isValidated())</span>
+<span class="nc" id="L117">                clients.add((Client)user);</span>
+<span class="fc" id="L118">        }</span>
+<span class="fc" id="L119">        Result&lt;List&lt;Client&gt;&gt; result = new Result&lt;&gt;();</span>
+<span class="fc" id="L120">        result.setResult(clients);</span>
+<span class="fc" id="L121">        return result;</span>
+    }
+
+    public void validateUser(String email) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (int i = 0; i &lt; userList.size(); i++) {</span>
+<span class="pc bpc" id="L126" title="3 of 4 branches missed.">            if (userList.get(i).getEmail().equals(email) &amp;&amp; userList.get(i) instanceof Client) {</span>
+<span class="nc" id="L127">                Client client = (Client) userList.get(i);</span>
+<span class="nc" id="L128">                client.validate();</span>
+                try {
+<span class="nc" id="L130">                    db.update(&quot;Users&quot;, i, client.serialize());</span>
+<span class="nc" id="L131">                } catch (IOException e) {</span>
+<span class="nc" id="L132">                    System.err.println(&quot;Error updating user: &quot; + e.getMessage());</span>
+<span class="nc" id="L133">                }</span>
+<span class="nc" id="L134">                break;</span>
+            }
+        }
+<span class="fc" id="L137">    }</span>
+
+    public void deleteUser(String email) {
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        for (int i = 0; i &lt; userList.size(); i++) {</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (userList.get(i).getEmail().equals(email)) {</span>
+<span class="nc" id="L142">                userList.remove(i);</span>
+                try {
+<span class="nc" id="L144">                    db.delete(&quot;Users&quot;, i);</span>
+<span class="nc" id="L145">                } catch (IOException e) {</span>
+<span class="nc" id="L146">                    System.err.println(&quot;Error deleting user: &quot; + e.getMessage());</span>
+<span class="nc" id="L147">                }</span>
+<span class="nc" id="L148">                break;</span>
+            }
+        }
+<span class="nc" id="L151">    }</span>
+
+    public Result&lt;List&lt;Booking&gt;&gt; getBookingsForUser(String email) {
+<span class="fc" id="L154">        Result&lt;List&lt;Booking&gt;&gt; result = new Result&lt;&gt;();</span>
+<span class="pc" id="L155">        result.setResult(bookingList.stream().filter(booking -&gt; booking.getUserId().equals(email)).toList());</span>
+<span class="fc" id="L156">        return result;</span>
+    }
+
+    public Result&lt;Booking&gt; getBookingById(int id) {
+<span class="fc" id="L160">        Result&lt;Booking&gt; result = new Result&lt;&gt;();</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        for (Booking booking : bookingList) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (booking.getBookingId() == id) {</span>
+<span class="nc" id="L163">                result.setResult(booking);</span>
+<span class="nc" id="L164">                return result;</span>
+            }
+<span class="nc" id="L166">        }</span>
+<span class="fc" id="L167">        result.setResult(null);</span>
+<span class="fc" id="L168">        return result;</span>
+    }
+
+    public void addPayment(double amount, String method, int bookingId) {
+<span class="fc" id="L172">        Booking booking = getBookingById(bookingId).getResult();</span>
+<span class="nc" id="L173">        Payment payment = new Payment(booking.getUserId(), bookingId, amount, &quot;paid&quot;, method);</span>
+<span class="nc" id="L174">        payment.ProcessPayment();</span>
+<span class="nc" id="L175">        paymentsList.add(payment);</span>
+<span class="nc" id="L176">        booking.setStatus(&quot;paid&quot;);</span>
+        try {
+<span class="nc" id="L178">            db.insert(&quot;Payments&quot;, payment.serialize());</span>
+<span class="nc" id="L179">            db.update(&quot;Bookings&quot;, bookingList.indexOf(booking), booking.serialize());</span>
+<span class="nc" id="L180">        } catch (IOException e) {</span>
+<span class="nc" id="L181">            System.err.println(&quot;Error saving payment: &quot; + e.getMessage());</span>
+<span class="nc" id="L182">        }</span>
+<span class="nc" id="L183">    }</span>
+
+    public Result&lt;List&lt;ParkingSpace&gt;&gt; getAvailableParkingSpaceList() {
+<span class="fc" id="L186">        ArrayList&lt;ParkingSpace&gt; spaces = new ArrayList&lt;ParkingSpace&gt;();</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        for (ParkingLot p : getParkingLotList().getResult())</span>
+<span class="fc" id="L188">            spaces.addAll(p.getAvailableParkingSpaceList());</span>
+<span class="fc" id="L189">        Result&lt;List&lt;ParkingSpace&gt;&gt; result = new Result&lt;&gt;();</span>
+<span class="fc" id="L190">        result.setResult(spaces);</span>
+<span class="fc" id="L191">        return result;</span>
+    }
+
+    public void bookParkingSpace(String currUserEmail, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
+        // to do
+        // check if everything is ok, parking spot is available
+        // user can book, etc.
+<span class="pc bnc" id="L198" title="All 2 branches missed.">        for (Booking booking : bookingList) {</span>
+<span class="nc bnc" id="L199" title="All 4 branches missed.">            if (booking.getParkingSpaceId() == parkingSpaceId &amp;&amp; booking.getParkingLotId() == parkingLotId) {</span>
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                if (booking.getStartTime().before(to) &amp;&amp; booking.getEndTime().after(from))</span>
+<span class="nc" id="L201">                    throw new IllegalArgumentException(&quot;Parking space is already booked for this time.&quot;);</span>
+            }
+<span class="nc" id="L203">        }</span>
+<span class="nc" id="L204">        Booking booking = new Booking(currUserEmail,parkingSpaceId,parkingLotId, ((Client) getUserById(currUserEmail).getResult()).getRate(), from, to, licensePlate);</span>
+<span class="nc" id="L205">        bookingList.add(booking);</span>
+        try {
+<span class="nc" id="L207">            db.insert(&quot;Bookings&quot;, booking.serialize());</span>
+<span class="nc" id="L208">        } catch (IOException e) {</span>
+<span class="nc" id="L209">            System.err.println(&quot;Error saving booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L210">        }</span>
+<span class="nc" id="L211">    }</span>
+
+    public void disableParkingLotById(int parkingLotId) {
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (int i = 0; i &lt; parkingLotList.size(); i++) {</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {</span>
+<span class="nc" id="L216">                parkingLotList.get(i).disable();</span>
+                
+<span class="nc" id="L218">                ParkingSpace[] ps = parkingLotList.get(i).getSpaces();</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                for (int j =0; j&lt;100; j++) {</span>
+<span class="nc" id="L220">                    ps[j].disable();</span>
+                    try {
+<span class="nc" id="L222">                        db.update(&quot;ParkingSpaces&quot;, i * 100 + j, ps[j].serialize());</span>
+<span class="nc" id="L223">                    } catch (IOException e) {</span>
+<span class="nc" id="L224">                        System.err.println(&quot;Error updating ParkingSpace: &quot; + e.getMessage());</span>
+<span class="nc" id="L225">                    }</span>
+                }
+
+                try {
+<span class="nc" id="L229">                    db.update(&quot;ParkingLots&quot;, i, parkingLotList.get(i).serialize());</span>
+<span class="nc" id="L230">                } catch (IOException e) {</span>
+<span class="nc" id="L231">                    System.err.println(&quot;Error updating ParkingLot: &quot; + e.getMessage());</span>
+<span class="nc" id="L232">                }</span>
+<span class="nc" id="L233">                break;</span>
+            }
+        }
+<span class="fc" id="L236">    }</span>
+
+    public void enableParkingLotById(int parkingLotId) {
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        for (int i = 0; i &lt; parkingLotList.size(); i++) {</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {</span>
+<span class="nc" id="L241">                parkingLotList.get(i).enable();</span>
+                
+<span class="nc" id="L243">                ParkingSpace[] ps = parkingLotList.get(i).getSpaces();</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                for (int j =0; j&lt;100; j++) {</span>
+<span class="nc" id="L245">                    ps[j].enable();</span>
+                    try {
+<span class="nc" id="L247">                        db.update(&quot;ParkingSpaces&quot;, i * 100 + j, ps[j].serialize());</span>
+<span class="nc" id="L248">                    } catch (IOException e) {</span>
+<span class="nc" id="L249">                        System.err.println(&quot;Error updating ParkingSpace: &quot; + e.getMessage());</span>
+<span class="nc" id="L250">                    }</span>
+                }
+
+                try {
+<span class="nc" id="L254">                    db.update(&quot;ParkingLots&quot;, i, parkingLotList.get(i).serialize());</span>
+<span class="nc" id="L255">                } catch (IOException e) {</span>
+<span class="nc" id="L256">                    System.err.println(&quot;Error updating ParkingLot: &quot; + e.getMessage());</span>
+<span class="nc" id="L257">                }</span>
+<span class="nc" id="L258">                break;</span>
+            }
+        }
+<span class="fc" id="L261">    }</span>
+
+    public void disableParkingSpaceById(int parkingLotId, int parkingSpaceId) {
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        for (int i = 0; i &lt; parkingLotList.size(); i++) {</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                for (int j=0; j &lt;100; j++) {</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                    if (parkingLotList.get(i).getSpaces()[j].getParkingSpaceId() == parkingSpaceId) {</span>
+<span class="nc" id="L268">                        parkingLotList.get(i).getSpaces()[j].disable();</span>
+                        try {
+<span class="nc" id="L270">                            db.update(&quot;ParkingSpaces&quot;, i * 100 + j, parkingLotList.get(i).getSpaces()[j].serialize());</span>
+<span class="nc" id="L271">                        } catch (IOException e) {</span>
+<span class="nc" id="L272">                            System.err.println(&quot;Error updating ParkingLot: &quot; + e.getMessage());</span>
+<span class="nc" id="L273">                        }</span>
+                    }
+                }
+                
+<span class="nc" id="L277">                break;</span>
+            }
+        }
+<span class="fc" id="L280">    }</span>
+
+    public void enableParkingSpaceById(int parkingLotId, int parkingSpaceId) {
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        for (int i = 0; i &lt; parkingLotList.size(); i++) {</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">            if (parkingLotList.get(i).getParkingLotId() == parkingLotId) {</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">                for (int j=0; j &lt;100; j++) {</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">                    if (parkingLotList.get(i).getSpaces()[j].getParkingSpaceId() == parkingSpaceId) {</span>
+<span class="nc" id="L287">                        parkingLotList.get(i).getSpaces()[j].enable();</span>
+                        try {
+<span class="nc" id="L289">                            db.update(&quot;ParkingSpaces&quot;, i * 100 + j, parkingLotList.get(i).getSpaces()[j].serialize());</span>
+<span class="nc" id="L290">                        } catch (IOException e) {</span>
+<span class="nc" id="L291">                            System.err.println(&quot;Error updating ParkingLot: &quot; + e.getMessage());</span>
+<span class="nc" id="L292">                        }</span>
+                    }
+                }
+                
+<span class="nc" id="L296">                break;</span>
+            }
+        }
+<span class="fc" id="L299">    }</span>
+
+    public void modifyParkingSpaceBooking(String currUserEmail, int bookingId, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
+        // to do
+        // check if everything is ok, parking spot is available
+        // user can book/modify booking etc.
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        for (Booking booking : bookingList) {</span>
+<span class="nc bnc" id="L306" title="All 4 branches missed.">            if (booking.getParkingSpaceId() == parkingSpaceId &amp;&amp; booking.getParkingLotId() == parkingLotId) {</span>
+<span class="nc bnc" id="L307" title="All 4 branches missed.">                if (booking.getUserId().equals(currUserEmail) &amp;&amp; booking.getBookingId() == bookingId) {</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">                    if (booking.getStartTime().before(from))</span>
+<span class="nc" id="L309">                        throw new IllegalArgumentException(&quot;The booking has already started. It cannot be modified anymore.&quot;);</span>
+                } else {
+<span class="nc bnc" id="L311" title="All 4 branches missed.">                    if (booking.getStartTime().before(to) &amp;&amp; booking.getEndTime().after(from))</span>
+<span class="nc" id="L312">                        throw new IllegalArgumentException(&quot;Parking space is already booked for this time.&quot;);</span>
+                }
+            }
+<span class="nc" id="L315">        }</span>
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">        for (int i = 0; i &lt; bookingList.size(); i++) {</span>
+<span class="nc" id="L317">            Booking b = bookingList.get(i);</span>
+<span class="nc bnc" id="L318" title="All 6 branches missed.">            if (b.getUserId().equals(currUserEmail) &amp;&amp; b.getParkingSpaceId() == parkingSpaceId &amp;&amp; b.getParkingLotId() == parkingLotId) {</span>
+<span class="nc" id="L319">                b.setLicensePlate(licensePlate);</span>
+<span class="nc" id="L320">                b.setStartTime(from);</span>
+<span class="nc" id="L321">                b.setEndTime(to);</span>
+<span class="nc" id="L322">                long hours = (to.getTime() - from.getTime() ) / (1000 * 60 * 60);</span>
+<span class="nc" id="L323">                b.setRemainingAmount(hours * b.getDepositAmount());</span>
+                try {
+<span class="nc" id="L325">                    db.update(&quot;Bookings&quot;, i, b.serialize());</span>
+<span class="nc" id="L326">                } catch (IOException e) {</span>
+<span class="nc" id="L327">                    System.err.println(&quot;Error updating booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L328">                }</span>
+<span class="nc" id="L329">                break;</span>
+            }
+        }
+<span class="fc" id="L332">    }</span>
+
+    public void cancelParkingSpaceBooking(String currUserEmail, int parkingLotId, int parkingSpaceId) throws IllegalArgumentException {
+        // to do
+        // check if user can modify/cancel booking etc.
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        for (int i = 0; i &lt; bookingList.size(); i++) {</span>
+<span class="nc" id="L338">            Booking b = bookingList.get(i);</span>
+<span class="nc bnc" id="L339" title="All 6 branches missed.">            if (b.getUserId().equals(currUserEmail) &amp;&amp; b.getParkingSpaceId() == parkingSpaceId &amp;&amp; b.getParkingLotId() == parkingLotId) {</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">                if (b.getStartTime().before(new Date()))</span>
+<span class="nc" id="L341">                    throw new IllegalArgumentException(&quot;The booking has already started. It cannot be cancelled anymore.&quot;);</span>
+<span class="nc" id="L342">                bookingList.remove(i);</span>
+                try {
+<span class="nc" id="L344">                    db.delete(&quot;Bookings&quot;, i);</span>
+<span class="nc" id="L345">                } catch (IOException e) {</span>
+<span class="nc" id="L346">                    System.err.println(&quot;Error deleting booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L347">                }</span>
+<span class="nc" id="L348">                break;</span>
+            }
+        }
+<span class="fc" id="L351">    }</span>
+
+    public void checkIntoBooking(Booking booking) {
+<span class="fc" id="L354">        booking.setCheckInTime(new Date());</span>
+<span class="fc" id="L355">        ParkingLot lot = getParkingLotById(booking.getParkingLotId()).getResult();</span>
+<span class="nc" id="L356">        ParkingSpace space = lot.getParkingSpaceById(booking.getParkingSpaceId());</span>
+<span class="nc" id="L357">        Sensor sensor = space.getSensor();</span>
+<span class="nc" id="L358">        sensor.setCarDetected(true);</span>
+<span class="nc" id="L359">        sensor.scanCarInfo();</span>
+        try {
+<span class="nc" id="L361">            db.update(&quot;Bookings&quot;, bookingList.indexOf(booking), booking.serialize());</span>
+<span class="nc" id="L362">        } catch (Exception e) {</span>
+<span class="nc" id="L363">            System.err.println(&quot;Error updating booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L364">        }</span>
+<span class="nc" id="L365">    }</span>
+
+    public Result&lt;List&lt;ParkingLot&gt;&gt; getParkingLotList() {
+<span class="fc" id="L368">        Result&lt;List&lt;ParkingLot&gt;&gt; result = new Result&lt;&gt;();</span>
+<span class="fc" id="L369">        result.setResult(parkingLotList);</span>
+<span class="fc" id="L370">        return result;</span>
+    }
+
+    public Result&lt;ParkingLot&gt; getParkingLotById(int parkingLotId) {
+<span class="fc" id="L374">        Result&lt;ParkingLot&gt; result = new Result&lt;&gt;();</span>
+<span class="fc bfc" id="L375" title="All 2 branches covered.">        for (ParkingLot p: getParkingLotList().getResult())</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">            if (p.getParkingLotId() == parkingLotId) {</span>
+<span class="fc" id="L377">                result.setResult(p);</span>
+<span class="fc" id="L378">                return result;</span>
+            }
+<span class="fc" id="L380">        result.setResult(null);</span>
+<span class="fc" id="L381">        return result;</span>
+    }
+
+    public Result&lt;User&gt; generateManager() throws IOException {
+<span class="fc" id="L385">        int randomNum = (int)(Math.random() * 9000) + 1000;</span>
+<span class="fc" id="L386">        int randomPass = (int)(Math.random() * 90000000) + 10000000;</span>
+<span class="fc" id="L387">        User m = UserFactory.createUser(&quot;manager&quot; + randomNum + &quot;@parking.system&quot;, &quot;&quot; + randomPass, Manager.TYPE);</span>
+<span class="fc" id="L388">        userList.add(m);</span>
+<span class="fc" id="L389">        db.insert(&quot;Users&quot;, m.serialize());</span>
+<span class="fc" id="L390">        Result&lt;User&gt; result = new Result&lt;&gt;();</span>
+<span class="fc" id="L391">        result.setResult(m);</span>
+<span class="fc" id="L392">        return result;</span>
+    }
+
+    public void createParkingLot(String location) throws IOException {
+<span class="fc" id="L396">        ParkingLot p = new ParkingLot(location);</span>
+<span class="fc" id="L397">        parkingLotList.add(p);</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">        for (ParkingSpace ps: p.getSpaces()) {</span>
+<span class="fc" id="L399">            db.insert(&quot;ParkingSpaces&quot;, ps.serialize());</span>
+        }
+<span class="fc" id="L401">        db.insert(&quot;ParkingLots&quot;, p.serialize());</span>
+<span class="fc" id="L402">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
