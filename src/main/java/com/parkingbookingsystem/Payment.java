@@ -19,8 +19,12 @@ public class Payment {
     }
 
     public Payment(int paymentId, String userId, int bookingId, double amount, String status, String paymentMethod) {
-        if (counter < paymentId) counter = paymentId;
-        this.paymentId = paymentId;
+        if (counter < paymentId) {
+            counter = paymentId;
+            this.paymentId = counter;
+        } else {
+            this.paymentId = ++counter;
+        }
         this.userId = userId;
         this.bookingId = bookingId;
         this.amount = amount;
@@ -129,5 +133,9 @@ public class Payment {
 
     public static Payment deserialize(String[] data) {
         return new Payment(Integer.parseInt(data[0]), data[1], Integer.parseInt(data[2]), Double.parseDouble(data[3]), data[4], data[5]);
+    }
+
+    public static void setCounter(int num) {
+        counter = num;
     }
 }

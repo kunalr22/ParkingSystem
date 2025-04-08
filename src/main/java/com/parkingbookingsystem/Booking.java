@@ -206,17 +206,11 @@ public class Booking {
             return false;
         }
         Booking booking = (Booking) o;
-        return bookingId == booking.bookingId &&
-                Objects.equals(userId, booking.userId) &&
+        return Objects.equals(userId, booking.userId) &&
                 Objects.equals(parkingSpaceId, booking.parkingSpaceId) &&
                 Objects.equals(parkingLotId, booking.parkingLotId) &&
-                remainingAmount == booking.remainingAmount &&
-                depositAmount == booking.depositAmount &&
                 Objects.equals(startTime, booking.startTime) &&
-                Objects.equals(endTime, booking.endTime) &&
-                Objects.equals(checkInTime, booking.checkInTime) &&
-                checkedIn == booking.checkedIn &&
-                Objects.equals(status, booking.status);
+                Objects.equals(endTime, booking.endTime);
     }
 
     @Override

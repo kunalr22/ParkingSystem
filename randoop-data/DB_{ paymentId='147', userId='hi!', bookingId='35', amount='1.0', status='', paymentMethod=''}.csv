@@ -1,0 +1,5 @@
+,,Visitor,true
+Non-Faculty Staff,Student,Visitor,Faculty
+,hi!,Visitor,true
+hi!,,Non-Faculty Staff,false
+hi!,,Non-Faculty Staff,false

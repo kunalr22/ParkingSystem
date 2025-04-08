@@ -1,0 +1,9 @@
+,,Visitor,true
+Non-Faculty Staff,Student,Visitor,Faculty
+,hi!,Visitor,true
+35,hi!,true
+35,hi!,false
+35,hi!,true
+35,hi!,true
+35,hi!,false
+35,hi!,true

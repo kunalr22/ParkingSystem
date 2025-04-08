@@ -61,7 +61,7 @@ public class User {
             " email='" + getEmail() + "'" +
             ", password='" + password + "'" +
             ", type='" + getType() + "'" +
-            "}";
+            " }";
     }
 
     public String[] serialize() {

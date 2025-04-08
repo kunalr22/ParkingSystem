@@ -54,10 +54,13 @@ public class Controller {
 
         // check if a super manager exists
         boolean supermanagerExists = false;
+        boolean client100Exists = false;
         for (User u: userList) {
             if (u.getType().equals("Super Manager")) {
                 supermanagerExists = true;
-                break;
+            }
+            if (u.getEmail().equals("client100@email.com")) {
+                client100Exists = true;
             }
         }
 
@@ -69,6 +72,16 @@ public class Controller {
                 db.insert("Users", superManager.serialize());
             } catch (IOException e) {
                 System.err.println("Error saving super manager: " + e.getMessage());
+            }
+        }
+
+        if (!client100Exists) {
+            User client100 = UserFactory.createUser("client100@email.com", "Client@1234", "Visitor", "true");
+            userList.add(client100);
+            try {
+                db.insert("Users", client100.serialize());
+            } catch (IOException e) {
+                System.err.println("Error saving client 100: " + e.getMessage());
             }
         }
     }
@@ -191,7 +204,7 @@ public class Controller {
         return result;
     }
 
-    public void bookParkingSpace(String currUserEmail, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
+    public Booking bookParkingSpace(String currUserEmail, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
         // to do
         // check if everything is ok, parking spot is available
         // user can book, etc.
@@ -208,6 +221,7 @@ public class Controller {
         } catch (IOException e) {
             System.err.println("Error saving booking: " + e.getMessage());
         }
+        return booking;
     }
 
     public void disableParkingLotById(int parkingLotId) {
@@ -298,7 +312,7 @@ public class Controller {
         }
     }
 
-    public void modifyParkingSpaceBooking(String currUserEmail, int bookingId, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
+    public Booking modifyParkingSpaceBooking(String currUserEmail, int bookingId, int parkingSpaceId, int parkingLotId, String licensePlate, Date from, Date to) throws IllegalArgumentException {
         // to do
         // check if everything is ok, parking spot is available
         // user can book/modify booking etc.
@@ -326,9 +340,10 @@ public class Controller {
                 } catch (IOException e) {
                     System.err.println("Error updating booking: " + e.getMessage());
                 }
-                break;
+                return b;
             }
         }
+        return null;
     }
 
     public void cancelParkingSpaceBooking(String currUserEmail, int parkingLotId, int parkingSpaceId) throws IllegalArgumentException {
@@ -392,12 +407,13 @@ public class Controller {
         return result;
     }
 
-    public void createParkingLot(String location) throws IOException {
+    public ParkingLot createParkingLot(String location) throws IOException {
         ParkingLot p = new ParkingLot(location);
         parkingLotList.add(p);
         for (ParkingSpace ps: p.getSpaces()) {
             db.insert("ParkingSpaces", ps.serialize());
         }
         db.insert("ParkingLots", p.serialize());
+        return p;
     }
 }
