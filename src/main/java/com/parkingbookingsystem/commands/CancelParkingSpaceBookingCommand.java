@@ -18,7 +18,7 @@ public class CancelParkingSpaceBookingCommand implements Command<Void> {
 
     @Override
     public Result<Void> execute() {
-        receiver.cancelParkingSpaceBooking(email, parkingSpaceId, parkingLotId);
+        receiver.cancelParkingSpaceBooking(email, parkingLotId, parkingSpaceId);
         return null;
     }
 }

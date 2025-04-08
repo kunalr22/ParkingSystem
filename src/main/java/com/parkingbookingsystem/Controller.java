@@ -347,8 +347,6 @@ public class Controller {
     }
 
     public void cancelParkingSpaceBooking(String currUserEmail, int parkingLotId, int parkingSpaceId) throws IllegalArgumentException {
-        // to do
-        // check if user can modify/cancel booking etc.
         for (int i = 0; i < bookingList.size(); i++) {
             Booking b = bookingList.get(i);
             if (b.getUserId().equals(currUserEmail) && b.getParkingSpaceId() == parkingSpaceId && b.getParkingLotId() == parkingLotId) {

@@ -1,6 +1,6 @@
 package com.parkingbookingsystem;
 
-import com.parkingbookingsystem.commands.Result;
+import com.parkingbookingsystem.commands.*;
 import org.junit.*;
 
 import java.io.File;
@@ -1245,10 +1245,770 @@ public class ParkingSystemTest {
 
     /* PaymentProcessorProxy class tests */
 
+    @Test
+    public void testPaymentProcessorProxyInstantiation() {
+        PaymentProcessorProxy proxy = new PaymentProcessorProxy();
+        assertNotNull(proxy);
+    }
 
-    /* All Command class tests */
+    @Test
+    public void testProcessPaymentSuccess() {
+        Payment.setCounter(100);
+        PaymentProcessorProxy proxy = new PaymentProcessorProxy();
+        Payment payment = new Payment("user1", 1, 100.0, "pending", "Credit Card");
+        boolean result = proxy.processPayment(payment);
+        assertTrue(result);
+    }
+
+    /* Result class tests */
+
+    @Test
+    public void testResultInstantiation() {
+        Result<String> result = new Result<>();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testSetAndGetResult() {
+        Result<String> result = new Result<>();
+        result.setResult("Test Data");
+        assertEquals("Test Data", result.getResult());
+    }
+
+    @Test
+    public void testSetAndGetMessage() {
+        Result<String> result = new Result<>();
+        result.setMessage("Test Message");
+        assertEquals("Test Message", result.getMessage());
+    }
+
+    @Test
+    public void testSetResultWithNull() {
+        Result<String> result = new Result<>();
+        result.setResult(null);
+        assertNull(result.getResult());
+    }
+
+    @Test
+    public void testSetMessageWithNull() {
+        Result<String> result = new Result<>();
+        result.setMessage(null);
+        assertNull(result.getMessage());
+    }
+
+    /* Invoker class tests */
+
+    @Test
+    public void testInvokerInstantiation() {
+        Invoker invoker = new Invoker();
+        assertNotNull(invoker);
+    }
+
+    @Test
+    public void testSetCommand() {
+        Invoker invoker = new Invoker();
+        Command mockCommand = new Command() {
+            @Override
+            public Result execute() {
+                return new Result();
+            }
+        };
+        invoker.setCommand(mockCommand);
+        assertNotNull(invoker);
+    }
+
+    @Test
+    public void testExecuteCommandSuccess() {
+        Invoker invoker = new Invoker();
+        Command mockCommand = new Command() {
+            @Override
+            public Result execute() {
+                Result<String> result = new Result<>();
+                result.setResult("Success");
+                return result;
+            }
+        };
+        invoker.setCommand(mockCommand);
+        Result result = invoker.executeCommand();
+        assertNotNull(result);
+        assertEquals("Success", result.getResult());
+    }
+
+    @Test
+    public void testExecuteCommandNullCommand() {
+        Invoker invoker = new Invoker();
+        try {
+            invoker.executeCommand();
+            fail("Expected NullPointerException when command is not set.");
+        } catch (NullPointerException e) {
+            assertEquals("Cannot invoke \"com.parkingbookingsystem.commands.Command.execute()\" because \"this.command\" is null", e.getMessage());
+        }
+    }
+
+    /* AddPaymentCommand class tests */
+
+    @Test
+    public void testAddPaymentCommandInstantiation() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Brampton");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 1, p.getParkingLotId(), "ABCD123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        AddPaymentCommand command = new AddPaymentCommand(controller, 100.0, "Credit Card", b.getBookingId());
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testAddPaymentExecute() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Brampton");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 1, p.getParkingLotId(), "ABCD123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        AddPaymentCommand command = new AddPaymentCommand(controller, 100.0, "Credit Card", b.getBookingId());
+
+        try {
+            command.execute();
+        } catch (Exception e) {
+            fail("Execution of AddPaymentCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    /* AddBookingParkingSpaceCommand class tests */
+
+    @Test
+    public void testBookParkingSpaceCommandInstantiation() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Brampton");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        BookParkingSpaceCommand command = new BookParkingSpaceCommand(
+            controller,
+            "client100@email.com",
+            1,
+            p.getParkingLotId(),
+            "ABCD123",
+            new Date(),
+            new Date(System.currentTimeMillis() + 3600000)
+        );
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testBookParkingSpaceCommandExecute() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Brampton");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        BookParkingSpaceCommand command = new BookParkingSpaceCommand(
+            controller,
+            "client100@email.com",
+            1,
+            p.getParkingLotId(),
+            "ABCD123",
+            new Date(),
+            new Date(System.currentTimeMillis() + 3600000)
+        );
+
+        try {
+            command.execute();
+        } catch (Exception e) {
+            fail("Execution of BookParkingSpaceCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    /* CancelParkingSpaceBookingCommand class tests */
+
+    @Test
+    public void testCancelParkingSpaceBookingCommandInstantiation() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Toronto");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 1, p.getParkingLotId(), "ABCD123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        CancelParkingSpaceBookingCommand command = new CancelParkingSpaceBookingCommand(controller, b.getUserId(), b.getParkingSpaceId(), b.getParkingLotId());
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testCancelParkingSpaceBookingCommandExecute() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Toronto");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 30, p.getParkingLotId(), "ABCD123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
+        CancelParkingSpaceBookingCommand command = new CancelParkingSpaceBookingCommand(controller, b.getUserId(), b.getParkingSpaceId(), b.getParkingLotId());
+        int id = b.getBookingId();
+        command.execute();
+        assertNull(controller.getBookingById(id).getResult());
+    }
+
+    /* CheckInToBookingCommand class tests */
+
+    @Test
+    public void testCheckInToBookingCommandInstantiation() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Toronto");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 1, p.getParkingLotId(), "ABCD123",
+                new Date(), new Date(System.currentTimeMillis() + 3600000));
+        CheckInToBookingCommand command = new CheckInToBookingCommand(controller, b);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testCheckInToBookingCommandExecute() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Toronto");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        Booking b = controller.bookParkingSpace("client100@email.com", 1, p.getParkingLotId(), "ABCD123",
+                new Date(), new Date(System.currentTimeMillis() + 3600000));
+        CheckInToBookingCommand command = new CheckInToBookingCommand(controller, b);
+
+        try {
+            command.execute();
+        } catch (Exception e) {
+            fail("Execution of CheckInToBookingCommand threw an exception: " + e.getMessage());
+        }
+
+        assertNotNull(b.getCheckInTime());
+        assertTrue(b.isCheckedIn());
+    }
+
+    /* CreateParkingLotCommand class tests */
+
+    @Test
+    public void testCreateParkingLotCommandInstantiation() {
+        Controller controller = new Controller();
+        CreateParkingLotCommand command = new CreateParkingLotCommand(controller, "Toronto");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testCreateParkingLotCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        CreateParkingLotCommand command = new CreateParkingLotCommand(controller, "Toronto");
+
+        try {
+            Result<Void> result = command.execute();
+            assertNull(result); // Expecting null as per the execute method's success case
+        } catch (Exception e) {
+            fail("Execution of CreateParkingLotCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateParkingLotCommandExecuteFailure() {
+        Controller controller = new Controller() {
+            @Override
+            public ParkingLot createParkingLot(String location) throws IOException {
+                throw new IOException("Failed to create parking lot");
+            }
+        };
+        CreateParkingLotCommand command = new CreateParkingLotCommand(controller, "Invalid Location");
+
+        Result<Void> result = command.execute();
+        assertNotNull(result);
+        assertEquals("Failed to create parking lot", result.getMessage());
+    }
+
+    /* CreateUserCommand class tests */
+
+    @Test
+    public void testCreateUserCommandInstantiation() {
+        Controller controller = new Controller();
+        CreateUserCommand command = new CreateUserCommand(controller, "test@example.com", "Password123", "Visitor");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testCreateUserCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        CreateUserCommand command = new CreateUserCommand(controller, "test@example.com", "Password@123", "Visitor");
+
+        try {
+            Result<User> result = command.execute();
+            assertNotNull(result);
+            assertNotNull(result.getResult());
+            assertEquals("test@example.com", result.getResult().getEmail());
+            assertEquals("Visitor", result.getResult().getType());
+        } catch (Exception e) {
+            fail("Execution of CreateUserCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateUserCommandExecuteFailure() {
+        Controller controller = new Controller() {
+            @Override
+            public Result<User> createUser(String email, String password, String type) {
+                throw new IllegalArgumentException("Invalid user data");
+            }
+        };
+        CreateUserCommand command = new CreateUserCommand(controller, "invalid_email", "short", "Unknown");
+
+        Result<User> result = command.execute();
+        assertNotNull(result);
+        assertNull(result.getResult());
+        assertEquals("Invalid user data", result.getMessage());
+    }
+
+    /* DeleteUserCommand class tests */
+
+    @Test
+    public void testDeleteUserCommandInstantiation() {
+        Controller controller = new Controller();
+        DeleteUserCommand command = new DeleteUserCommand(controller, "test@example.com");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testDeleteUserCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        try {
+            controller.createUser("test@example.com", "Password@123", "Visitor");
+        } catch (Exception e) {
+            fail("Failed to create user: " + e.getMessage());
+        }
+        DeleteUserCommand command = new DeleteUserCommand(controller, "test@example.com");
+
+        try {
+            command.execute();
+            assertNull(controller.getUserById("test@example.com").getResult());
+        } catch (Exception e) {
+            fail("Execution of DeleteUserCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteUserCommandExecuteFailure() {
+        Controller controller = new Controller();
+        DeleteUserCommand command = new DeleteUserCommand(controller, "nonexistent@example.com");
+
+        try {
+            command.execute();
+            assertNull(controller.getUserById("nonexistent@example.com").getResult());
+        } catch (Exception e) {
+            fail("Execution of DeleteUserCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    /* GenerateManagerCommand class tests */
+
+    @Test
+    public void testGenerateManagerCommandInstantiation() {
+        Controller controller = new Controller();
+        GenerateManagerCommand command = new GenerateManagerCommand(controller);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGenerateManagerCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        GenerateManagerCommand command = new GenerateManagerCommand(controller);
+
+        try {
+            Result<User> result = command.execute();
+            assertNotNull(result);
+            assertNotNull(result.getResult());
+            assertEquals("Manager", result.getResult().getType());
+        } catch (Exception e) {
+            fail("Execution of GenerateManagerCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGenerateManagerCommandExecuteFailure() {
+        Controller controller = new Controller() {
+            @Override
+            public Result<User> generateManager() throws IOException {
+                throw new IOException("Failed to generate manager");
+            }
+        };
+        GenerateManagerCommand command = new GenerateManagerCommand(controller);
+
+        Result<User> result = command.execute();
+        assertNotNull(result);
+        assertNull(result.getResult());
+        assertEquals("Failed to generate manager", result.getMessage());
+    }
+
+    /* GetAvailableParkingSpaceListCommand class tests */
+
+    @Test
+    public void testGetAvailableParkingSpaceListCommandInstantiation() {
+        Controller controller = new Controller();
+        GetAvailableParkingSpaceListCommand command = new GetAvailableParkingSpaceListCommand(controller);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetAvailableParkingSpaceListCommandExecute() {
+        Controller controller = new Controller();
+        try {
+            controller.createParkingLot("Test Location");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        GetAvailableParkingSpaceListCommand command = new GetAvailableParkingSpaceListCommand(controller);
+
+        try {
+            Result<List<ParkingSpace>> result = command.execute();
+            assertNotNull(result);
+            assertNotNull(result.getResult());
+            assertTrue(result.getResult().size() > 0); // Assuming there are available spaces
+        } catch (Exception e) {
+            fail("Execution of GetAvailableParkingSpaceListCommand threw an exception: " + e.getMessage());
+        }
+    }
+
+    /* GetBookingByIdCommand class tests */
+
+    @Test
+    public void testGetBookingByIdCommandInstantiation() {
+        Controller controller = new Controller();
+        GetBookingByIdCommand command = new GetBookingByIdCommand(controller, 1);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetBookingByIdCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        Booking booking = null;
+        try {
+            ParkingLot lot = controller.createParkingLot("Toronto");
+            booking = controller.bookParkingSpace("client100@email.com", 1, lot.getParkingLotId(), "ABCD123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            fail("Failed to create booking: " + e.getMessage());
+        }
+        GetBookingByIdCommand command = new GetBookingByIdCommand(controller, booking.getBookingId());
+        Result<Booking> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertEquals(booking.getBookingId(), result.getResult().getBookingId());
+    }
+
+    @Test
+    public void testGetBookingByIdCommandExecuteFailure() {
+        Controller controller = new Controller();
+        GetBookingByIdCommand command = new GetBookingByIdCommand(controller, -1); // Invalid booking ID
+        Result<Booking> result = command.execute();
+        assertNotNull(result);
+        assertNull(result.getResult());
+    }
+
+    /* GetBookingsForUserCommand class tests */
+
+    @Test
+    public void testGetBookingsForUserCommandInstantiation() {
+        Controller controller = new Controller();
+        GetBookingsForUserCommand command = new GetBookingsForUserCommand(controller, "test@example.com");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetBookingsForUserCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        Booking booking = null;
+        try {
+            controller.createUser("a@a.com", "Password@123", "Visitor");
+            ParkingLot lot = controller.createParkingLot("YorkU");
+            booking = controller.bookParkingSpace("a@a.com", 1, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        GetBookingsForUserCommand command = new GetBookingsForUserCommand(controller, "a@a.com");
+
+        Result<List<Booking>> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertFalse(result.getResult().isEmpty());
+        assertEquals(result.getResult().size(), 1);
+        assertEquals(result.getResult().get(0).getBookingId(), booking.getBookingId());
+    }
+
+    @Test
+    public void testGetBookingsForUserCommandExecuteNoBookings() {
+        Controller controller = new Controller();
+        try {
+            controller.createUser("b@b.com", "Password@123", "Visitor");
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        GetBookingsForUserCommand command = new GetBookingsForUserCommand(controller, "b@b.com");
+
+        Result<List<Booking>> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertTrue(result.getResult().isEmpty());
+    }
+
+    @Test
+    public void testGetBookingsForUserCommandExecuteInvalidUser() {
+        Controller controller = new Controller();
+        GetBookingsForUserCommand command = new GetBookingsForUserCommand(controller, "nonexistent@example.com");
+
+        Result<List<Booking>> result = command.execute();
+        assertNotNull(result);
+        assertTrue(result.getResult().isEmpty());
+    }
+
+    /* GetParkingLotByIdCommand class tests */
+
+    @Test
+    public void testGetParkingLotByIdCommandInstantiation() {
+        Controller controller = new Controller();
+        GetParkingLotByIdCommand command = new GetParkingLotByIdCommand(controller, 1);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetParkingLotByIdCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        ParkingLot parkingLot = null;
+        try {
+            parkingLot = controller.createParkingLot("Downtown");
+        } catch (Exception e) {
+            fail("Failed to create parking lot: " + e.getMessage());
+        }
+        GetParkingLotByIdCommand command = new GetParkingLotByIdCommand(controller, parkingLot.getParkingLotId());
+        Result<ParkingLot> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertEquals(parkingLot.getParkingLotId(), result.getResult().getParkingLotId());
+    }
+
+    @Test
+    public void testGetParkingLotByIdCommandExecuteNotFound() {
+        Controller controller = new Controller();
+        GetParkingLotByIdCommand command = new GetParkingLotByIdCommand(controller, -1); // Invalid parking lot ID
+        Result<ParkingLot> result = command.execute();
+        assertNotNull(result);
+        assertNull(result.getResult());
+    }
+
+    /* GetParkingLotListCommand class tests */
+
+    @Test
+    public void testGetParkingLotListCommandInstantiation() {
+        Controller controller = new Controller();
+        GetParkingLotListCommand command = new GetParkingLotListCommand(controller);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetParkingLotListCommandExecute() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Winnipeg");
+        } catch (Exception e) {
+            fail("Failed to create parking lots: " + e.getMessage());
+        }
+        GetParkingLotListCommand command = new GetParkingLotListCommand(controller);
+
+        Result<List<ParkingLot>> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertFalse(result.getResult().isEmpty());
+        assertTrue(result.getResult().contains(p));
+    }
+
+    /* GetUnvalidatedClientsCommand class tests */
+
+    @Test
+    public void testGetUnvalidatedClientsCommandInstantiation() {
+        Controller controller = new Controller();
+        GetUnvalidatedClientsCommand command = new GetUnvalidatedClientsCommand(controller);
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetUnvalidatedClientsCommandExecute() {
+        Controller controller = new Controller();
+        Result<User> u1 = null;
+        Result<User> u2 = null;
+        try {
+            u1 = controller.createUser("client1@email.com", "Password@123", "Student");
+            u2 = controller.createUser("client2@email.com", "Password@123", "Faculty");
+            controller.validateUser("client1@email.com"); // Validate one client
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        GetUnvalidatedClientsCommand command = new GetUnvalidatedClientsCommand(controller);
+
+        Result<List<Client>> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertFalse(result.getResult().isEmpty());
+        assertFalse(result.getResult().contains(u1.getResult()));
+        assertTrue(result.getResult().contains(u2.getResult())); // Unvalidated client
+    }
+
+    /* GetUserCommand class tests */
+
+    @Test
+    public void testGetUserCommandInstantiation() {
+        Controller controller = new Controller();
+        GetUserCommand command = new GetUserCommand(controller, "test@example.com");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testGetUserCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        try {
+            controller.createUser("getusertest@example.com", "Password@123", "Visitor");
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        GetUserCommand command = new GetUserCommand(controller, "test@example.com");
+
+        Result<User> result = command.execute();
+        assertNotNull(result);
+        assertNotNull(result.getResult());
+        assertEquals("test@example.com", result.getResult().getEmail());
+    }
+
+    @Test
+    public void testGetUserCommandExecuteUserNotFound() {
+        Controller controller = new Controller();
+        GetUserCommand command = new GetUserCommand(controller, "nonexistent@example.com");
+
+        Result<User> result = command.execute();
+        assertNotNull(result);
+        assertNull(result.getResult());
+    }
+
+    /* ModifyParkingSpaceBookingCommand class tests */
+
+    @Test
+    public void testModifyParkingSpaceBookingCommandInstantiation() {
+        Controller controller = new Controller();
+        ModifyParkingSpaceBookingCommand command = new ModifyParkingSpaceBookingCommand(
+            controller, "test0@example.com", 1, 1, 1, "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testModifyParkingSpaceBookingCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        ParkingLot lot = null;
+        Booking booking = null;
+        try {
+            controller.createUser("testmodify1@example.com", "Password@123", "Visitor");
+            lot = controller.createParkingLot("Toronto");
+            booking = controller.bookParkingSpace("test@example.com", 1, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        ModifyParkingSpaceBookingCommand command = new ModifyParkingSpaceBookingCommand(
+            controller, "test@example.com", booking.getBookingId(), 1, lot.getParkingLotId(), "XYZ789", new Date(), new Date(System.currentTimeMillis() + 7200000));
+        command.execute();
+        Booking modifiedBooking = controller.getBookingById(booking.getBookingId()).getResult();
+        assertNotNull(modifiedBooking);
+        assertEquals("XYZ789", modifiedBooking.getLicensePlate());
+    }
+
+    @Test
+    public void testModifyParkingSpaceBookingCommandExecuteBookingAlreadyStarted() {
+        Controller controller = new Controller();
+        ParkingLot lot = null;
+        Booking booking = null;
+        try {
+            controller.createUser("testmodify2@example.com", "Password@123", "Visitor");
+            lot = controller.createParkingLot("Toronto");
+            booking = controller.bookParkingSpace("testmodify2@example.com", 1, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() - 3600000), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        ModifyParkingSpaceBookingCommand command = new ModifyParkingSpaceBookingCommand(
+            controller, "testmodify2@example.com", booking.getBookingId(), 1, lot.getParkingLotId(), "XYZ789", new Date(), new Date(System.currentTimeMillis() + 7200000));
+        try {
+            command.execute();
+            fail("Expected IllegalArgumentException for modifying a booking that has already started.");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The booking has already started. It cannot be modified anymore.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testModifyParkingSpaceBookingCommandExecuteParkingSpaceUnavailable() {
+        Controller controller = new Controller();
+        ParkingLot lot = null;
+        Booking booking1 = null;
+        Booking booking2 = null;
+        try {
+            controller.createUser("testmodify3@example.com", "Password@123", "Visitor");
+            controller.createUser("other@example.com", "Password@123", "Visitor");
+            lot = controller.createParkingLot("Toronto");
+            booking1 = controller.bookParkingSpace("testmodify3@example.com", 1, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 7200000));
+            booking2 = controller.bookParkingSpace("other@example.com", 2, lot.getParkingLotId(), "DEF456", new Date(System.currentTimeMillis() + 3600000), new Date(System.currentTimeMillis() + 10800000));
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        ModifyParkingSpaceBookingCommand command = new ModifyParkingSpaceBookingCommand(
+            controller, "testmodify3@example.com", booking1.getBookingId(), 2, lot.getParkingLotId(), "XYZ789", new Date(System.currentTimeMillis() + 3600000), new Date(System.currentTimeMillis() + 10800000));
+        try {
+            command.execute();
+            fail("Expected IllegalArgumentException for modifying a booking with an unavailable parking space.");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Parking space is already booked for this time.", e.getMessage());
+        }
+    }
+
+    /* ValidateUserCommand class tests */
+
+    @Test
+    public void testValidateUserCommandInstantiation() {
+        Controller controller = new Controller();
+        ValidateUserCommand command = new ValidateUserCommand(controller, "test@example.com");
+        assertNotNull(command);
+    }
+
+    @Test
+    public void testValidateUserCommandExecuteSuccess() {
+        Controller controller = new Controller();
+        try {
+            controller.createUser("testvalidate@example.com", "Password@123", "Visitor");
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        }
+        ValidateUserCommand command = new ValidateUserCommand(controller, "testvalidate@example.com");
+        command.execute();
+        Result<User> result = controller.getUserById("testvalidate@example.com");
+        assertNotNull(result.getResult());
+        assertTrue(((Client) result.getResult()).isValidated());
+    }
 
     /* Database class tests */
+
     @Test
     public void testDatabaseGetInstance() {
         Database db1 = Database.getInstance();
@@ -1430,8 +2190,14 @@ public class ParkingSystemTest {
             System.out.println(e.getMessage());
         }
         Booking b;
+        ParkingLot lot = null;
         try {
-            b = controller.bookParkingSpace("client100@email.com", 1, 201, "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+            lot = controller.createParkingLot("Test Location");
+        } catch (IOException e) {
+            fail("Failed to create parking lot");
+        }
+        try {
+            b = controller.bookParkingSpace("client100@email.com", 1, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
         } catch (Exception e) {
             b = controller.getBookingsForUser("client100@email.com").getResult().get(0);
         }
@@ -1454,8 +2220,22 @@ public class ParkingSystemTest {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        controller.bookParkingSpace("client100@email.com", 2, 201, "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        ParkingLot lot = null;
+        try {
+            lot = controller.createParkingLot("Test Location");
+        } catch (IOException e) {
+            fail("Failed to create parking lot");
+        }
+        controller.bookParkingSpace("client100@email.com", 2, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
         assertFalse(controller.getBookingsForUser("client100@email.com").getResult().isEmpty());
+
+        //booking a parking space that is already booked at the same time
+        try {
+            controller.bookParkingSpace("client100@email.com", 2, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
+
     }
 
     @Test
@@ -1520,32 +2300,58 @@ public class ParkingSystemTest {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        Booking b;
+        Booking b = null;
+        ParkingLot lot = null;
         try {
-            b = controller.bookParkingSpace("client100@email.com", 1, 201, "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+            lot = controller.createParkingLot("Test Location");
         } catch (Exception e) {
-            b = controller.getBookingById(1).getResult();
+            System.out.println(e.getMessage());
         }
+        b = controller.bookParkingSpace("client100@email.com", 1, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
         Date newStartTime = new Date();
         Date newEndTime = new Date(System.currentTimeMillis() + 7200000);
         b = controller.modifyParkingSpaceBooking("client100@email.com", b.getBookingId(), b.getParkingSpaceId(), b.getParkingLotId(), "XYZ789", newStartTime, newEndTime);
         assertEquals("XYZ789", b.getLicensePlate());
         assertEquals(newStartTime, b.getStartTime());
         assertEquals(newEndTime, b.getEndTime());
+
+        //modifying a booking that has already started
+        try {
+            b = controller.modifyParkingSpaceBooking("client100@email.com", b.getBookingId(), b.getParkingSpaceId(), b.getParkingLotId(), "XYZ789", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
+
+        controller.createUser("abc@d.com", "Client@1234", "Visitor");
+        b = controller.bookParkingSpace("abc@d.com", 2, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+
+        b = controller.bookParkingSpace("client100@email.com", 3, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
+        try {
+            b = controller.modifyParkingSpaceBooking("client100@email.com", b.getBookingId(), 2, b.getParkingLotId(), "XYZ789", new Date(), new Date(System.currentTimeMillis() + 3600000));
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
+
     }
 
     @Test
     public void testControllerCancelParkingSpaceBooking() {
         Controller controller = new Controller();
         Booking b;
+        ParkingLot lot = null;
         try {
-            b = controller.bookParkingSpace("client100@email.com", 1, 201, "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
-            controller.cancelParkingSpaceBooking("client100@email.com", 201, 1);
+            lot = controller.createParkingLot("Test Location");
+        } catch (IOException e) {
+            fail("Failed to create parking lot");
+        }
+        try {
+            b = controller.bookParkingSpace("client100@email.com", 1, lot.getParkingLotId(), "ABC123", new Date(), new Date(System.currentTimeMillis() + 3600000));
+            controller.cancelParkingSpaceBooking("client100@email.com", lot.getParkingLotId(), 1);
         } catch (Exception e) {
             assertTrue(e instanceof IllegalArgumentException);
         }
         try {
-            b = controller.bookParkingSpace("client100@email.com", 2, 201, "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
+            b = controller.bookParkingSpace("client100@email.com", 2, lot.getParkingLotId(), "ABC123", new Date(System.currentTimeMillis() + 3000000), new Date(System.currentTimeMillis() + 3600000));
         } catch (Exception e) {
             b = controller.getBookingById(2).getResult();
         }
@@ -1587,6 +2393,23 @@ public class ParkingSystemTest {
         Controller controller = new Controller();
         ParkingLot p = controller.createParkingLot("New Location");
         assertNotNull(p);
+    }
+
+    @Test
+    public void testControllerGetParkingLotById() {
+        Controller controller = new Controller();
+        ParkingLot p = null;
+        try {
+            p = controller.createParkingLot("Test Location");
+        } catch (IOException e) {
+            fail("Failed to create parking lot");
+        }
+        Result<ParkingLot> result = controller.getParkingLotById(p.getParkingLotId());
+        assertNotNull(result.getResult());
+        assertEquals(p.getParkingLotId(), result.getResult().getParkingLotId());
+
+        result = controller.getParkingLotById(-1);
+        assertNull(result.getResult());
     }
 
     @AfterClass

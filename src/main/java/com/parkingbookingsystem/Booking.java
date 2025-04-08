@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Booking {
     private int bookingId, parkingSpaceId, parkingLotId;
-    private static int counter = 0;
+    private static int counter = 1;
     private String userId; // email address
     private double remainingAmount;
     private double depositAmount;
