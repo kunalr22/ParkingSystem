@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParkingSystemGUI.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">parking-booking-system</a> &gt; <a href="index.source.html" class="el_package">com.parkingbookingsystem</a> &gt; <span class="el_source">ParkingSystemGUI.java</span></div><h1>ParkingSystemGUI.java</h1><pre class="source lang-java linenums">package com.parkingbookingsystem;
+
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.ArrayDeque;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Deque;
+import java.util.List;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import com.formdev.flatlaf.FlatLightLaf;
+import com.parkingbookingsystem.commands.*;
+
+
+public class ParkingSystemGUI implements Subscriber {
+<span class="nc" id="L36">    private final Controller controller = new Controller();</span>
+<span class="nc" id="L37">    private final Database db = Database.getInstance();</span>
+<span class="nc" id="L38">    private final Invoker invoker = new Invoker();</span>
+    private final JFrame frame;
+    private String currUserEmail;
+    private int currParkingLot;
+<span class="nc" id="L42">    private final CardLayout cardLayout = new CardLayout();</span>
+    private final JPanel mainPanel;
+<span class="nc" id="L44">    private final Deque&lt;String&gt; prevPanels = new ArrayDeque&lt;&gt;();</span>
+    private DefaultListModel&lt;String&gt; 
+        parkingSpaceBookingManagementModel, 
+        parkingLotManagementModel,
+        parkingSpaceManagementModel,
+        parkingSpaceBookingModel, 
+        userApprovalModel,
+        paymentModel;
+    
+<span class="nc" id="L53">    public ParkingSystemGUI() {</span>
+<span class="nc" id="L54">        db.addSubscriber(this); // observe the model</span>
+
+<span class="nc" id="L56">        frame = new JFrame(&quot;Parking System&quot;);</span>
+<span class="nc" id="L57">        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);</span>
+<span class="nc" id="L58">        frame.setSize(550, 500);</span>
+<span class="nc" id="L59">        frame.setResizable(false);</span>
+        
+<span class="nc" id="L61">        mainPanel = new JPanel(cardLayout);</span>
+        
+<span class="nc" id="L63">        mainPanel.add(createLoginPanel(), &quot;Login&quot;);</span>
+<span class="nc" id="L64">        mainPanel.add(createRegisterPanel(), &quot;Register&quot;);</span>
+<span class="nc" id="L65">        mainPanel.add(createClientPanel(), &quot;Client&quot;);</span>
+<span class="nc" id="L66">        mainPanel.add(createManagerPanel(), &quot;Manager&quot;);</span>
+<span class="nc" id="L67">        mainPanel.add(createSuperManagerPanel(), &quot;SuperManager&quot;);</span>
+<span class="nc" id="L68">        mainPanel.add(createUserApprovalPanel(), &quot;UserApproval&quot;);</span>
+<span class="nc" id="L69">        mainPanel.add(createParkingLotManagementPanel(), &quot;ParkingLotManagement&quot;);</span>
+<span class="nc" id="L70">        mainPanel.add(createParkingSpaceManagementPanel(), &quot;ParkingSpaceManagement&quot;);</span>
+<span class="nc" id="L71">        mainPanel.add(createParkingSpaceBookingPanel(), &quot;ParkingSpaceBooking&quot;);</span>
+<span class="nc" id="L72">        mainPanel.add(createParkingSpaceBookingManagementPanel(), &quot;ParkingSpaceBookingManagement&quot;);</span>
+<span class="nc" id="L73">        mainPanel.add(createPaymentPanel(), &quot;Payment&quot;);</span>
+
+        // initial update
+<span class="nc" id="L76">        updateUserApprovalModel();</span>
+<span class="nc" id="L77">        updateParkingSpaceBookingManagementModel();</span>
+<span class="nc" id="L78">        updateParkingSpaceBookingModel();</span>
+<span class="nc" id="L79">        updateParkingLotManagementModel();</span>
+<span class="nc" id="L80">        updateparkingSpaceManagementModel();</span>
+<span class="nc" id="L81">        updatePaymentModel();</span>
+        
+<span class="nc" id="L83">        frame.add(mainPanel);</span>
+<span class="nc" id="L84">        frame.setVisible(true);</span>
+<span class="nc" id="L85">    }</span>
+    
+    private JPanel createLoginPanel() {
+
+<span class="nc" id="L89">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L90">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L91">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L92">        gbc.insets = new Insets(5, 5, 5, 5);</span>
+<span class="nc" id="L93">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+
+<span class="nc" id="L95">        JLabel emailLabel = new JLabel(&quot;Email:&quot;);</span>
+<span class="nc" id="L96">        JTextField emailField = new JTextField(15);</span>
+<span class="nc" id="L97">        JLabel passwordLabel = new JLabel(&quot;Password:&quot;);</span>
+<span class="nc" id="L98">        JPasswordField passwordField = new JPasswordField(15);</span>
+<span class="nc" id="L99">        JButton loginButton = new JButton(&quot;Log In&quot;);</span>
+<span class="nc" id="L100">        JLabel registerLabel = new JLabel(&quot;Don't have an account?&quot;);</span>
+<span class="nc" id="L101">        JButton registerButton = new JButton(&quot;Register&quot;);</span>
+<span class="nc" id="L102">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L103">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+
+<span class="nc" id="L105">        gbc.gridx = 0;</span>
+<span class="nc" id="L106">        gbc.gridy = 0;</span>
+<span class="nc" id="L107">        panel.add(emailLabel, gbc);</span>
+<span class="nc" id="L108">        gbc.gridx = 1;</span>
+<span class="nc" id="L109">        panel.add(emailField, gbc);</span>
+        
+<span class="nc" id="L111">        gbc.gridx = 0;</span>
+<span class="nc" id="L112">        gbc.gridy = 1;</span>
+<span class="nc" id="L113">        panel.add(passwordLabel, gbc);</span>
+<span class="nc" id="L114">        gbc.gridx = 1;</span>
+<span class="nc" id="L115">        panel.add(passwordField, gbc);</span>
+        
+<span class="nc" id="L117">        gbc.gridx = 1;</span>
+<span class="nc" id="L118">        gbc.gridy = 2;</span>
+<span class="nc" id="L119">        panel.add(loginButton, gbc);</span>
+
+<span class="nc" id="L121">        gbc.gridx = 0;</span>
+<span class="nc" id="L122">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L123">        gbc.gridy = 3;</span>
+<span class="nc" id="L124">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L126">        gbc.gridy = 4;</span>
+<span class="nc" id="L127">        panel.add(registerLabel, gbc);</span>
+
+<span class="nc" id="L129">        gbc.gridy = 5;</span>
+<span class="nc" id="L130">        panel.add(registerButton, gbc);</span>
+        
+<span class="nc" id="L132">        loginButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L133">            String email = emailField.getText();</span>
+<span class="nc" id="L134">            String password = new String(passwordField.getPassword());</span>
+            // User user = controller.getUserById(email);
+<span class="nc" id="L136">            Command&lt;User&gt; getUser = new GetUserCommand(controller, email);</span>
+<span class="nc" id="L137">            invoker.setCommand(getUser);</span>
+<span class="nc" id="L138">            User user = (User) invoker.executeCommand().getResult();</span>
+<span class="nc bnc" id="L139" title="All 4 branches missed.">            if (user != null &amp;&amp; user.canLogin(password)) {</span>
+<span class="nc" id="L140">                currUserEmail = email;</span>
+<span class="nc" id="L141">                JOptionPane.showMessageDialog(frame, &quot;Login successful!&quot;);</span>
+<span class="nc bnc" id="L142" title="All 3 branches missed.">                switch (user.getType()) {</span>
+<span class="nc" id="L143">                    case SuperManager.TYPE -&gt; cardLayout.show(mainPanel, &quot;SuperManager&quot;);</span>
+<span class="nc" id="L144">                    case Manager.TYPE -&gt; cardLayout.show(mainPanel, &quot;Manager&quot;);</span>
+<span class="nc" id="L145">                    default -&gt; cardLayout.show(mainPanel, &quot;Client&quot;);</span>
+<span class="nc" id="L146">                }</span>
+            } else {
+<span class="nc" id="L148">                JOptionPane.showMessageDialog(frame, &quot;Invalid credentials&quot;);</span>
+            }
+<span class="nc" id="L150">        });</span>
+        
+<span class="nc" id="L152">        registerButton.addActionListener(_ -&gt; cardLayout.show(mainPanel, &quot;Register&quot;));</span>
+        
+<span class="nc" id="L154">        return panel;</span>
+    }
+    
+    private JPanel createRegisterPanel() {
+
+<span class="nc" id="L159">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L160">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L161">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L162">        gbc.insets = new Insets(5, 5, 5, 5);</span>
+<span class="nc" id="L163">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+
+<span class="nc" id="L165">        JLabel emailLabel = new JLabel(&quot;Email:&quot;);</span>
+<span class="nc" id="L166">        JTextField emailField = new JTextField(15);</span>
+<span class="nc" id="L167">        JLabel passwordLabel = new JLabel(&quot;Password:&quot;);</span>
+<span class="nc" id="L168">        JPasswordField passwordField = new JPasswordField(15);</span>
+<span class="nc" id="L169">        JLabel userTypeLabel = new JLabel(&quot;User Type:&quot;);</span>
+        // If new user types are added, has to be modified. Violates Open-Close principle.
+<span class="nc" id="L171">        JComboBox&lt;String&gt; userTypeField = new JComboBox&lt;&gt;(UserFactory.getAllClientTypes());</span>
+<span class="nc" id="L172">        JButton registerButton = new JButton(&quot;Register&quot;);</span>
+<span class="nc" id="L173">        JLabel loginLabel = new JLabel(&quot;Already have an account?&quot;);</span>
+<span class="nc" id="L174">        JButton loginButton = new JButton(&quot;Login&quot;);</span>
+<span class="nc" id="L175">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L176">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+
+<span class="nc" id="L178">        gbc.gridx = 0;</span>
+<span class="nc" id="L179">        gbc.gridy = 0;</span>
+<span class="nc" id="L180">        panel.add(emailLabel, gbc);</span>
+<span class="nc" id="L181">        gbc.gridx = 1;</span>
+<span class="nc" id="L182">        panel.add(emailField, gbc);</span>
+        
+<span class="nc" id="L184">        gbc.gridx = 0;</span>
+<span class="nc" id="L185">        gbc.gridy = 1;</span>
+<span class="nc" id="L186">        panel.add(passwordLabel, gbc);</span>
+<span class="nc" id="L187">        gbc.gridx = 1;</span>
+<span class="nc" id="L188">        panel.add(passwordField, gbc);</span>
+
+<span class="nc" id="L190">        gbc.gridx = 0;</span>
+<span class="nc" id="L191">        gbc.gridy = 2;</span>
+<span class="nc" id="L192">        panel.add(userTypeLabel, gbc);</span>
+<span class="nc" id="L193">        gbc.gridx = 1;</span>
+<span class="nc" id="L194">        panel.add(userTypeField, gbc);</span>
+        
+<span class="nc" id="L196">        gbc.gridx = 1;</span>
+<span class="nc" id="L197">        gbc.gridy = 3;</span>
+<span class="nc" id="L198">        panel.add(registerButton, gbc);</span>
+
+<span class="nc" id="L200">        gbc.gridx = 0;</span>
+<span class="nc" id="L201">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L202">        gbc.gridy = 4;</span>
+<span class="nc" id="L203">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L205">        gbc.gridy = 5;</span>
+<span class="nc" id="L206">        panel.add(loginLabel, gbc);</span>
+
+<span class="nc" id="L208">        gbc.gridy = 6;</span>
+<span class="nc" id="L209">        panel.add(loginButton, gbc);</span>
+        
+<span class="nc" id="L211">        registerButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L212">            String email = emailField.getText();</span>
+<span class="nc" id="L213">            String password = new String(passwordField.getPassword());</span>
+<span class="nc" id="L214">            String type = (String) userTypeField.getSelectedItem();</span>
+
+            // controller.createUser(email, password, type);
+<span class="nc" id="L217">            Command&lt;User&gt; createUser = new CreateUserCommand(controller, email, password, type);</span>
+<span class="nc" id="L218">            invoker.setCommand(createUser);</span>
+<span class="nc" id="L219">            Result&lt;User&gt; result = (Result&lt;User&gt;) invoker.executeCommand();</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (result.getResult() != null) {</span>
+<span class="nc" id="L221">                JOptionPane.showMessageDialog(frame, &quot;Registration successful!&quot;);</span>
+<span class="nc" id="L222">                cardLayout.show(mainPanel, &quot;Login&quot;);</span>
+                // updateUserApprovalModel();
+            } else {
+<span class="nc" id="L225">                JOptionPane.showMessageDialog(frame, &quot;Invalid user creation: &quot; + result.getMessage());</span>
+            }
+<span class="nc" id="L227">        });</span>
+        
+<span class="nc" id="L229">        loginButton.addActionListener(_ -&gt; cardLayout.show(mainPanel, &quot;Login&quot;));</span>
+        
+<span class="nc" id="L231">        return panel;</span>
+    }
+
+    private JPanel createClientPanel() {
+<span class="nc" id="L235">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L236">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L237">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L238">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L239">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L241">        JLabel welcomeLabel = new JLabel(&quot;Welcome Dear Client!&quot;);</span>
+<span class="nc" id="L242">        JButton bookingButton = new JButton(&quot;Book A Parking Space&quot;);</span>
+<span class="nc" id="L243">        JButton manageBookingsButton = new JButton(&quot;Manage Existing Bookings&quot;);</span>
+<span class="nc" id="L244">        JButton paymentButton = new JButton(&quot;Make A Payment&quot;);</span>
+<span class="nc" id="L245">        JButton logoutButton = new JButton(&quot;Log Out&quot;);</span>
+<span class="nc" id="L246">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L247">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L249">        gbc.gridx = 0;</span>
+<span class="nc" id="L250">        gbc.gridy = 0;</span>
+<span class="nc" id="L251">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L252">        panel.add(welcomeLabel, gbc);</span>
+        
+<span class="nc" id="L254">        gbc.gridy = 1;</span>
+<span class="nc" id="L255">        panel.add(bookingButton, gbc);</span>
+        
+<span class="nc" id="L257">        gbc.gridy = 2;</span>
+<span class="nc" id="L258">        panel.add(manageBookingsButton, gbc);</span>
+        
+<span class="nc" id="L260">        gbc.gridy = 3;</span>
+<span class="nc" id="L261">        panel.add(paymentButton, gbc);</span>
+        
+<span class="nc" id="L263">        gbc.gridy = 4;</span>
+<span class="nc" id="L264">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L266">        gbc.gridy = 5;</span>
+<span class="nc" id="L267">        panel.add(logoutButton, gbc);</span>
+
+<span class="nc" id="L269">        bookingButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L270">            prevPanels.push(&quot;Client&quot;);</span>
+<span class="nc" id="L271">            updateParkingSpaceBookingModel();</span>
+<span class="nc" id="L272">            cardLayout.show(mainPanel, &quot;ParkingSpaceBooking&quot;);</span>
+<span class="nc" id="L273">        });</span>
+        
+<span class="nc" id="L275">        manageBookingsButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L276">            prevPanels.push(&quot;Client&quot;);</span>
+<span class="nc" id="L277">            updateParkingSpaceBookingManagementModel();</span>
+<span class="nc" id="L278">            cardLayout.show(mainPanel, &quot;ParkingSpaceBookingManagement&quot;);</span>
+<span class="nc" id="L279">        });</span>
+
+<span class="nc" id="L281">        paymentButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L282">            prevPanels.push(&quot;Client&quot;);</span>
+<span class="nc" id="L283">            updatePaymentModel();</span>
+<span class="nc" id="L284">            cardLayout.show(mainPanel, &quot;Payment&quot;);</span>
+<span class="nc" id="L285">        });</span>
+
+<span class="nc" id="L287">        logoutButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L288">            JOptionPane.showMessageDialog(frame, &quot;Hate to see you leave! Please come back soon!&quot;);</span>
+<span class="nc" id="L289">            currUserEmail = null;</span>
+<span class="nc" id="L290">            cardLayout.show(mainPanel, &quot;Login&quot;);</span>
+<span class="nc" id="L291">        });</span>
+        
+<span class="nc" id="L293">        return panel;</span>
+    }
+
+    private JPanel createManagerPanel() {
+<span class="nc" id="L297">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L298">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L299">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L300">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L301">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L303">        JLabel welcomeLabel = new JLabel(&quot;Welcome Manager!&quot;);</span>
+<span class="nc" id="L304">        JButton verifyUsersButton = new JButton(&quot;Verify Newly Registered Users&quot;);</span>
+<span class="nc" id="L305">        JButton manageParkingButton = new JButton(&quot;Manage Parking Booking&quot;);</span>
+<span class="nc" id="L306">        JButton logoutButton = new JButton(&quot;Log Out&quot;);</span>
+<span class="nc" id="L307">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L308">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L310">        gbc.gridx = 0;</span>
+<span class="nc" id="L311">        gbc.gridy = 0;</span>
+<span class="nc" id="L312">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L313">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L314">        panel.add(welcomeLabel, gbc);</span>
+        
+<span class="nc" id="L316">        gbc.gridy = 1;</span>
+<span class="nc" id="L317">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L318">        panel.add(verifyUsersButton, gbc);</span>
+        
+<span class="nc" id="L320">        gbc.gridy = 2;</span>
+<span class="nc" id="L321">        panel.add(manageParkingButton, gbc);</span>
+        
+<span class="nc" id="L323">        gbc.gridy = 3;</span>
+<span class="nc" id="L324">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L326">        gbc.gridy = 4;</span>
+<span class="nc" id="L327">        panel.add(logoutButton, gbc);</span>
+
+<span class="nc" id="L329">        manageParkingButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L330">            prevPanels.push(&quot;Manager&quot;);</span>
+            // updateParkingLotManagementModel();
+<span class="nc" id="L332">            cardLayout.show(mainPanel, &quot;ParkingLotManagement&quot;);</span>
+<span class="nc" id="L333">        });</span>
+
+<span class="nc" id="L335">        verifyUsersButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L336">            prevPanels.push(&quot;Manager&quot;);</span>
+            // updateUserApprovalModel();
+<span class="nc" id="L338">            cardLayout.show(mainPanel, &quot;UserApproval&quot;);</span>
+
+<span class="nc" id="L340">        });</span>
+
+<span class="nc" id="L342">        logoutButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L343">            JOptionPane.showMessageDialog(frame, &quot;Hate to see you leave! Please come back soon!&quot;);</span>
+<span class="nc" id="L344">            currUserEmail = null;</span>
+<span class="nc" id="L345">            cardLayout.show(mainPanel, &quot;Login&quot;);</span>
+<span class="nc" id="L346">        });</span>
+        
+<span class="nc" id="L348">        return panel;</span>
+    }
+
+    private JPanel createSuperManagerPanel() {
+<span class="nc" id="L352">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L353">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L354">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L355">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L356">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L358">        JLabel welcomeLabel = new JLabel(&quot;Welcome SuperManager!&quot;);</span>
+<span class="nc" id="L359">        JButton generateManagerButton = new JButton(&quot;Generate New Manager Account&quot;);</span>
+<span class="nc" id="L360">        JButton verifyUsersButton = new JButton(&quot;Verify Newly Registered Users&quot;);</span>
+<span class="nc" id="L361">        JButton manageParkingButton = new JButton(&quot;Manage Parking Booking&quot;);</span>
+<span class="nc" id="L362">        JButton logoutButton = new JButton(&quot;Log Out&quot;);</span>
+        
+<span class="nc" id="L364">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L365">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L367">        gbc.gridx = 0;</span>
+<span class="nc" id="L368">        gbc.gridy = 0;</span>
+<span class="nc" id="L369">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L370">        panel.add(welcomeLabel, gbc);</span>
+        
+<span class="nc" id="L372">        gbc.gridy = 1;</span>
+<span class="nc" id="L373">        panel.add(generateManagerButton, gbc);</span>
+        
+<span class="nc" id="L375">        gbc.gridy = 2;</span>
+<span class="nc" id="L376">        panel.add(verifyUsersButton, gbc);</span>
+        
+<span class="nc" id="L378">        gbc.gridy = 3;</span>
+<span class="nc" id="L379">        panel.add(manageParkingButton, gbc);</span>
+        
+<span class="nc" id="L381">        gbc.gridy = 4;</span>
+<span class="nc" id="L382">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L384">        gbc.gridy = 5;</span>
+<span class="nc" id="L385">        panel.add(logoutButton, gbc);</span>
+
+<span class="nc" id="L387">        generateManagerButton.addActionListener(_ -&gt; {</span>
+            // User newManager = controller.generateManager();
+<span class="nc" id="L389">            Command&lt;User&gt; generateManager = new GenerateManagerCommand(controller);</span>
+<span class="nc" id="L390">            invoker.setCommand(generateManager);</span>
+<span class="nc" id="L391">            Result&lt;User&gt; result = (Result&lt;User&gt;) invoker.executeCommand();</span>
+<span class="nc" id="L392">            User newManager = result.getResult();</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">            if (newManager != null) {</span>
+<span class="nc" id="L394">                JOptionPane.showMessageDialog(frame, &quot;New manager account generated: Username: &quot; + newManager.getEmail() + &quot;, Password: &quot; + newManager.getPassword());</span>
+            } else {
+<span class="nc" id="L396">                JOptionPane.showMessageDialog(frame, &quot;Error generating new manager: &quot; + result.getMessage());</span>
+            }
+<span class="nc" id="L398">        });</span>
+
+<span class="nc" id="L400">        manageParkingButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L401">            prevPanels.push(&quot;SuperManager&quot;);</span>
+            // updateParkingLotManagementModel();
+<span class="nc" id="L403">            cardLayout.show(mainPanel, &quot;ParkingLotManagement&quot;);</span>
+<span class="nc" id="L404">        });</span>
+        
+<span class="nc" id="L406">        verifyUsersButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L407">            prevPanels.push(&quot;SuperManager&quot;);</span>
+            // updateUserApprovalModel();
+<span class="nc" id="L409">            cardLayout.show(mainPanel, &quot;UserApproval&quot;);</span>
+<span class="nc" id="L410">        });</span>
+
+<span class="nc" id="L412">        logoutButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L413">            JOptionPane.showMessageDialog(frame, &quot;Hate to see you leave! Please come back soon!&quot;);</span>
+<span class="nc" id="L414">            currUserEmail = null;</span>
+<span class="nc" id="L415">            cardLayout.show(mainPanel, &quot;Login&quot;);</span>
+<span class="nc" id="L416">        });</span>
+        
+<span class="nc" id="L418">        return panel;</span>
+    }
+
+    private void updateUserApprovalModel() {
+<span class="nc" id="L422">        userApprovalModel.clear();</span>
+<span class="nc" id="L423">        Command&lt;List&lt;Client&gt;&gt; getUnvalidatedClients = new GetUnvalidatedClientsCommand(controller);</span>
+<span class="nc" id="L424">        invoker.setCommand(getUnvalidatedClients);</span>
+<span class="nc" id="L425">        List&lt;Client&gt; unvalidatedClients = (List&lt;Client&gt;) invoker.executeCommand().getResult();</span>
+        // for (Client client : controller.getUnvalidatedClients())
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        for (Client client : unvalidatedClients)</span>
+<span class="nc" id="L428">            userApprovalModel.addElement(client.getEmail() + &quot;, &quot; + client.getType() + &quot;, pending approval&quot;);</span>
+<span class="nc" id="L429">    }</span>
+
+    private JPanel createUserApprovalPanel() {
+<span class="nc" id="L432">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L433">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L434">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L435">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L436">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+    
+<span class="nc" id="L438">        JLabel instructionLabel = new JLabel(&quot;Please select a user from the list and approve or decline their registration.&quot;);</span>
+<span class="nc" id="L439">        userApprovalModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L440">        JList&lt;String&gt; userList = new JList&lt;&gt;(userApprovalModel);</span>
+<span class="nc" id="L441">        updateUserApprovalModel();</span>
+<span class="nc" id="L442">        JScrollPane scrollPane = new JScrollPane(userList);</span>
+<span class="nc" id="L443">        scrollPane.setPreferredSize(new Dimension(300, 150));</span>
+<span class="nc" id="L444">        JButton approveButton = new JButton(&quot;Approve&quot;);</span>
+<span class="nc" id="L445">        JButton declineButton = new JButton(&quot;Decline&quot;);</span>
+<span class="nc" id="L446">        Dimension buttonSize = new Dimension(200, 25);</span>
+<span class="nc" id="L447">        approveButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L448">        declineButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L449">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L450">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L451">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L453">        gbc.gridx = 0;</span>
+<span class="nc" id="L454">        gbc.gridy = 0;</span>
+<span class="nc" id="L455">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L456">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L457">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L459">        gbc.gridy = 1;</span>
+<span class="nc" id="L460">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L461">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L463">        gbc.gridy = 2;</span>
+<span class="nc" id="L464">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L465">        panel.add(declineButton, gbc);</span>
+        
+<span class="nc" id="L467">        gbc.gridx = 1;</span>
+<span class="nc" id="L468">        panel.add(approveButton, gbc);</span>
+        
+<span class="nc" id="L470">        gbc.gridx = 0;</span>
+<span class="nc" id="L471">        gbc.gridy = 3;</span>
+<span class="nc" id="L472">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L473">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L475">        gbc.gridy = 4;</span>
+<span class="nc" id="L476">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L478">        approveButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            if (userList.getSelectedIndex() != -1) {</span>
+<span class="nc" id="L480">                String user = userList.getSelectedValue();</span>
+                // controller.validateUser(user.split(&quot;, &quot;)[0]);
+<span class="nc" id="L482">                Command&lt;Void&gt; validateUser = new ValidateUserCommand(controller, user.split(&quot;, &quot;)[0]);</span>
+<span class="nc" id="L483">                invoker.setCommand(validateUser);</span>
+<span class="nc" id="L484">                invoker.executeCommand();</span>
+<span class="nc" id="L485">                JOptionPane.showMessageDialog(frame, &quot;You approved user: &quot; + user.split(&quot;, &quot;)[0] + &quot;!&quot;);</span>
+                // updateUserApprovalModel();
+<span class="nc" id="L487">            } else {</span>
+<span class="nc" id="L488">                JOptionPane.showMessageDialog(frame, &quot;Please select a user first.&quot;);</span>
+            }
+<span class="nc" id="L490">        });</span>
+
+<span class="nc" id="L492">        declineButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">            if (userList.getSelectedIndex() != -1) {</span>
+<span class="nc" id="L494">                String user = userList.getSelectedValue();</span>
+                // controller.deleteUser(user.split(&quot;, &quot;)[0]);
+<span class="nc" id="L496">                Command&lt;Void&gt; deleteUser = new DeleteUserCommand(controller, user.split(&quot;, &quot;)[0]);</span>
+<span class="nc" id="L497">                invoker.setCommand(deleteUser);</span>
+<span class="nc" id="L498">                invoker.executeCommand();</span>
+<span class="nc" id="L499">                JOptionPane.showMessageDialog(frame, &quot;You deleted user: &quot; + user.split(&quot;, &quot;)[0] + &quot;!&quot;);</span>
+                // updateUserApprovalModel();
+<span class="nc" id="L501">            } else {</span>
+<span class="nc" id="L502">                JOptionPane.showMessageDialog(frame, &quot;Please select a user first.&quot;);</span>
+            }
+<span class="nc" id="L504">        });</span>
+
+<span class="nc" id="L506">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L507">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L508">        });</span>
+        
+<span class="nc" id="L510">        return panel;</span>
+    }
+    
+    private void updatePaymentModel() {
+<span class="nc" id="L514">        paymentModel.clear();</span>
+<span class="nc" id="L515">        Command&lt;List&lt;Booking&gt;&gt; getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);</span>
+<span class="nc" id="L516">        invoker.setCommand(getBookingsForUser);</span>
+<span class="nc" id="L517">        List&lt;Booking&gt; bookings = (List&lt;Booking&gt;) invoker.executeCommand().getResult();</span>
+        // for (Booking b : controller.getBookingsForUser(currUserEmail))
+<span class="nc bnc" id="L519" title="All 2 branches missed.">        for (Booking b : bookings)</span>
+<span class="nc" id="L520">            paymentModel.addElement(b.getBookingId()+ &quot;, &quot; + b.getParkingSpaceId() + &quot;, &quot; + b.getParkingLotId() + &quot;, from &quot; + b.getStartTime() + &quot;, to &quot; + b.getEndTime() + &quot;, license place: &quot; + b.getLicensePlate());</span>
+<span class="nc" id="L521">    }</span>
+
+    private JPanel createPaymentPanel() {
+<span class="nc" id="L524">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L525">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L526">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L527">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L528">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+    
+<span class="nc" id="L530">        JLabel instructionLabel = new JLabel(&quot;Please select existing booking from the list.&quot;);</span>
+<span class="nc" id="L531">        paymentModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L532">        JList&lt;String&gt; bookingList = new JList&lt;&gt;(paymentModel);</span>
+<span class="nc" id="L533">        updatePaymentModel();</span>
+<span class="nc" id="L534">        JScrollPane scrollPane = new JScrollPane(bookingList);</span>
+<span class="nc" id="L535">        scrollPane.setPreferredSize(new Dimension(300, 150));</span>
+<span class="nc" id="L536">        JLabel amountLabel = new JLabel(&quot;Amount Due:&quot;);</span>
+        // JTextField amountField = new JTextField(15);
+<span class="nc" id="L538">        JLabel toPayLabel = new JLabel();</span>
+<span class="nc" id="L539">        JLabel deductedLabel = new JLabel(&quot;Deposit deducted?&quot;);</span>
+<span class="nc" id="L540">        JLabel deductedFlagLabel = new JLabel();</span>
+<span class="nc" id="L541">        JLabel paymentMethodLabel = new JLabel(&quot;Payment Method:&quot;);</span>
+<span class="nc" id="L542">        JComboBox&lt;String&gt; paymentMethodField = new JComboBox&lt;&gt;(Payment.PAYMENT_TYPES);</span>
+<span class="nc" id="L543">        JButton payButton = new JButton(&quot;Make A Payment&quot;);</span>
+<span class="nc" id="L544">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L545">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L546">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L548">        gbc.gridx = 0;</span>
+<span class="nc" id="L549">        gbc.gridy = 0;</span>
+<span class="nc" id="L550">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L551">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L552">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L554">        gbc.gridy = 1;</span>
+<span class="nc" id="L555">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L556">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L558">        gbc.gridy = 2;</span>
+<span class="nc" id="L559">        gbc.gridx = 0;</span>
+<span class="nc" id="L560">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L561">        panel.add(amountLabel, gbc);</span>
+        
+<span class="nc" id="L563">        gbc.gridx = 1;</span>
+<span class="nc" id="L564">        panel.add(toPayLabel, gbc);</span>
+
+<span class="nc" id="L566">        gbc.gridy = 3;</span>
+<span class="nc" id="L567">        gbc.gridx = 0;</span>
+<span class="nc" id="L568">        panel.add(deductedLabel, gbc);</span>
+
+<span class="nc" id="L570">        gbc.gridx = 1;</span>
+<span class="nc" id="L571">        panel.add(deductedFlagLabel, gbc);</span>
+
+<span class="nc" id="L573">        gbc.gridy = 4;</span>
+<span class="nc" id="L574">        gbc.gridx = 0;</span>
+<span class="nc" id="L575">        panel.add(paymentMethodLabel, gbc);</span>
+        
+<span class="nc" id="L577">        gbc.gridx = 1;</span>
+<span class="nc" id="L578">        panel.add(paymentMethodField, gbc);</span>
+
+<span class="nc" id="L580">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L581">        gbc.gridy = 5;</span>
+<span class="nc" id="L582">        gbc.gridx = 0;</span>
+<span class="nc" id="L583">        panel.add(payButton, gbc);</span>
+        
+//        gbc.gridy = 6;
+//        panel.add(spacer, gbc);
+        
+<span class="nc" id="L588">        gbc.gridy = 7;</span>
+<span class="nc" id="L589">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L591">        bookingList.addListSelectionListener(e -&gt; {</span>
+<span class="nc bnc" id="L592" title="All 4 branches missed.">            if (!e.getValueIsAdjusting() &amp;&amp; bookingList.getSelectedIndex() != -1) {</span>
+<span class="nc" id="L593">                String booking = bookingList.getSelectedValue();</span>
+<span class="nc" id="L594">                Command&lt;Booking&gt; getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L595">                invoker.setCommand(getBookingById);</span>
+<span class="nc" id="L596">                Booking bookingObj = (Booking) invoker.executeCommand().getResult();</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">                if (bookingObj.getEndTime().after(new Date())) {</span>
+<span class="nc" id="L598">                    JOptionPane.showMessageDialog(frame, &quot;You can't pay for a booking that hasn't ended yet.&quot;);</span>
+<span class="nc" id="L599">                    bookingList.clearSelection();</span>
+<span class="nc" id="L600">                    toPayLabel.setText(&quot;&quot;);</span>
+<span class="nc" id="L601">                    deductedFlagLabel.setText(&quot;&quot;);</span>
+<span class="nc" id="L602">                    return;</span>
+                }
+<span class="nc bnc" id="L604" title="All 2 branches missed.">                if (bookingObj.getStatus().equals(&quot;paid&quot;)) {</span>
+<span class="nc" id="L605">                    JOptionPane.showMessageDialog(frame, &quot;This booking has already been paid for.&quot;);</span>
+<span class="nc" id="L606">                    bookingList.clearSelection();</span>
+<span class="nc" id="L607">                    toPayLabel.setText(&quot;&quot;);</span>
+<span class="nc" id="L608">                    deductedFlagLabel.setText(&quot;&quot;);</span>
+<span class="nc" id="L609">                    return;</span>
+                }
+<span class="nc" id="L611">                toPayLabel.setText(String.format(&quot;$%.2f&quot;, bookingObj.getRemainingAmount()) );</span>
+<span class="nc bnc" id="L612" title="All 4 branches missed.">                boolean deductedFlag = bookingObj.isCheckedIn() &amp;&amp; bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() &lt; 3600000;</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">                deductedFlagLabel.setText(deductedFlag ? &quot;Yes&quot; : &quot;No&quot;);</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">                deductedFlagLabel.setForeground(deductedFlag ? java.awt.Color.GREEN : java.awt.Color.RED);</span>
+            }
+<span class="nc" id="L616">        });</span>
+
+<span class="nc" id="L618">        payButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L619" title="All 2 branches missed.">           if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L620">                JOptionPane.showMessageDialog(frame, &quot;Please select a booking first.&quot;);</span>
+<span class="nc" id="L621">                return;</span>
+           }
+<span class="nc" id="L623">           String booking = bookingList.getSelectedValue();</span>
+<span class="nc" id="L624">           Command&lt;Booking&gt; getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L625">           invoker.setCommand(getBookingById);</span>
+<span class="nc" id="L626">           Booking bookingObj = (Booking) invoker.executeCommand().getResult();</span>
+<span class="nc" id="L627">           Command&lt;Void&gt; addPayment = new AddPaymentCommand(controller, bookingObj.getRemainingAmount(), (String) paymentMethodField.getSelectedItem(), bookingObj.getBookingId());</span>
+<span class="nc" id="L628">           invoker.setCommand(addPayment);</span>
+<span class="nc" id="L629">           invoker.executeCommand();</span>
+<span class="nc" id="L630">           JOptionPane.showMessageDialog(frame, &quot;Payment successful. You paid: &quot; + String.format(&quot;$%.2f&quot;, bookingObj.getRemainingAmount()));</span>
+<span class="nc" id="L631">        });</span>
+
+<span class="nc" id="L633">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L634">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L635">        });</span>
+        
+<span class="nc" id="L637">        return panel;</span>
+    }
+
+    private void updateParkingSpaceBookingModel() {
+<span class="nc" id="L641">        parkingSpaceBookingModel.clear();</span>
+<span class="nc" id="L642">        Command&lt;List&lt;ParkingSpace&gt;&gt; getAvailableParkingSpaceList = new GetAvailableParkingSpaceListCommand(controller);</span>
+<span class="nc" id="L643">        invoker.setCommand(getAvailableParkingSpaceList);</span>
+<span class="nc" id="L644">        List&lt;ParkingSpace&gt; availableParkingSpaceList = (List&lt;ParkingSpace&gt;) invoker.executeCommand().getResult();</span>
+        // for (ParkingSpace p : controller.getAvailableParkingSpaceList())
+<span class="nc bnc" id="L646" title="All 2 branches missed.">        for (ParkingSpace p : availableParkingSpaceList) {</span>
+<span class="nc" id="L647">            parkingSpaceBookingModel.addElement(p.getParkingSpaceId() + &quot;, &quot; + p.getParkingLotId() + &quot;, available&quot;);</span>
+<span class="nc" id="L648">        }</span>
+<span class="nc" id="L649">    }</span>
+
+    private JPanel createParkingSpaceBookingPanel() {
+<span class="nc" id="L652">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L653">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L654">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L655">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L656">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L658">        JLabel instructionLabel = new JLabel(&quot;Please select a parking space from the list.&quot;);</span>
+<span class="nc" id="L659">        parkingSpaceBookingModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L660">        JList&lt;String&gt; bookingList = new JList&lt;&gt;(parkingSpaceBookingModel);</span>
+<span class="nc" id="L661">        updateParkingSpaceBookingModel();</span>
+<span class="nc" id="L662">        JScrollPane scrollPane = new JScrollPane(bookingList);</span>
+<span class="nc" id="L663">        scrollPane.setPreferredSize(new Dimension(300, 150));</span>
+<span class="nc" id="L664">        SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);</span>
+<span class="nc" id="L665">        JSpinner fromTimeSpinner = new JSpinner(model);</span>
+<span class="nc" id="L666">        fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, &quot;yyyy-MM-dd HH:mm&quot;));</span>
+<span class="nc" id="L667">        JLabel fromLabel = new JLabel(&quot;From:&quot;);</span>
+<span class="nc" id="L668">        JLabel licenseLabel = new JLabel(&quot;License Plate:&quot;);</span>
+<span class="nc" id="L669">        JTextField licenseField = new JTextField(15);</span>
+<span class="nc" id="L670">        JLabel paymentMethodLabel = new JLabel(&quot;Deposit Payment Method:&quot;);</span>
+<span class="nc" id="L671">        JComboBox&lt;String&gt; paymentMethodField = new JComboBox&lt;&gt;(Payment.PAYMENT_TYPES);</span>
+<span class="nc" id="L672">        JButton bookButton = new JButton(&quot;Book Space&quot;);</span>
+<span class="nc" id="L673">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L674">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L675">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L677">        gbc.gridx = 0;</span>
+<span class="nc" id="L678">        gbc.gridy = 0;</span>
+<span class="nc" id="L679">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L680">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L681">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L683">        gbc.gridy = 1;</span>
+<span class="nc" id="L684">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L685">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L687">        gbc.gridy = 2;</span>
+<span class="nc" id="L688">        gbc.gridx = 0;</span>
+<span class="nc" id="L689">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L690">        panel.add(fromLabel, gbc);</span>
+        
+<span class="nc" id="L692">        gbc.gridx = 1;</span>
+<span class="nc" id="L693">        panel.add(fromTimeSpinner, gbc);</span>
+
+<span class="nc" id="L695">        gbc.gridy = 3;</span>
+<span class="nc" id="L696">        gbc.gridx = 0;</span>
+<span class="nc" id="L697">        panel.add(licenseLabel, gbc);</span>
+        
+<span class="nc" id="L699">        gbc.gridx = 1;</span>
+<span class="nc" id="L700">        panel.add(licenseField, gbc);</span>
+
+<span class="nc" id="L702">        gbc.gridy = 4;</span>
+<span class="nc" id="L703">        gbc.gridx = 0;</span>
+<span class="nc" id="L704">        panel.add(paymentMethodLabel, gbc);</span>
+        
+<span class="nc" id="L706">        gbc.gridx = 1;</span>
+<span class="nc" id="L707">        panel.add(paymentMethodField, gbc);</span>
+
+<span class="nc" id="L709">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L710">        gbc.gridy = 5;</span>
+<span class="nc" id="L711">        gbc.gridx = 0;</span>
+<span class="nc" id="L712">        panel.add(bookButton, gbc);</span>
+        
+<span class="nc" id="L714">        gbc.gridy = 6;</span>
+<span class="nc" id="L715">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L717">        gbc.gridy = 7;</span>
+<span class="nc" id="L718">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L720">        bookButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L721" title="All 2 branches missed.">            if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L722">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking space first.&quot;);</span>
+<span class="nc" id="L723">                return;</span>
+            }
+<span class="nc" id="L725">            String booking = bookingList.getSelectedValue();</span>
+            try {
+<span class="nc bnc" id="L727" title="All 2 branches missed.">                if (licenseField.getText().isEmpty()) {</span>
+<span class="nc" id="L728">                    throw new IllegalArgumentException(&quot;License plate can't be empty.&quot;);</span>
+                }
+<span class="nc bnc" id="L730" title="All 2 branches missed.">                if (licenseField.getText().length() != 7) {</span>
+<span class="nc" id="L731">                    throw new IllegalArgumentException(&quot;License plate must be 7 characters long.&quot;);</span>
+                }
+<span class="nc bnc" id="L733" title="All 2 branches missed.">                if (!licenseField.getText().matches(&quot;^[A-Za-z]{4}\\d{3}$&quot;)) {</span>
+<span class="nc" id="L734">                    throw new IllegalArgumentException(&quot;License plate must be in the standard Ontario Passenger Plate format. For example: CEFN107&quot;);</span>
+                }
+<span class="nc" id="L736">                Date fromTime = (Date) fromTimeSpinner.getValue();</span>
+<span class="nc" id="L737">                Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L738">                calendar.setTime(fromTime);</span>
+<span class="nc" id="L739">                calendar.add(Calendar.HOUR, 1);</span>
+<span class="nc" id="L740">                Date toTime = calendar.getTime();</span>
+<span class="nc" id="L741">                Command&lt;Void&gt; bookParkingSpace = new BookParkingSpaceCommand(</span>
+                        controller,
+                        currUserEmail,
+<span class="nc" id="L744">                        Integer.parseInt(booking.split(&quot;, &quot;)[0]),</span>
+<span class="nc" id="L745">                        Integer.parseInt(booking.split(&quot;, &quot;)[1]),</span>
+<span class="nc" id="L746">                        licenseField.getText(),</span>
+                        fromTime,
+                        toTime);
+<span class="nc" id="L749">                invoker.setCommand(bookParkingSpace);</span>
+<span class="nc" id="L750">                invoker.executeCommand();</span>
+<span class="nc" id="L751">                Command&lt;User&gt; getUserById = new GetUserCommand(controller, currUserEmail);</span>
+<span class="nc" id="L752">                invoker.setCommand(getUserById);</span>
+<span class="nc" id="L753">                Client client = (Client) invoker.executeCommand().getResult();</span>
+<span class="nc" id="L754">                JOptionPane.showMessageDialog(frame, String.format(&quot;Parking space was successfully booked! A deposit of $%.2f was made.&quot;, client.getRate()));</span>
+<span class="nc" id="L755">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L756">                JOptionPane.showMessageDialog(frame, &quot;Couldn't process the booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L757">            }</span>
+<span class="nc" id="L758">        });</span>
+
+<span class="nc" id="L760">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L761">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L762">        });</span>
+        
+<span class="nc" id="L764">        return panel;</span>
+        
+    }
+
+    private void updateParkingSpaceBookingManagementModel() {
+<span class="nc" id="L769">        parkingSpaceBookingManagementModel.clear();</span>
+<span class="nc" id="L770">        Command&lt;List&lt;Booking&gt;&gt; getBookingsForUser = new GetBookingsForUserCommand(controller, currUserEmail);</span>
+<span class="nc" id="L771">        invoker.setCommand(getBookingsForUser);</span>
+<span class="nc" id="L772">        List&lt;Booking&gt; bookings = (List&lt;Booking&gt;) invoker.executeCommand().getResult();</span>
+<span class="nc bnc" id="L773" title="All 2 branches missed.">        for (Booking b : bookings) {</span>
+<span class="nc" id="L774">            Command&lt;ParkingLot&gt; getParkingLotById = new GetParkingLotByIdCommand(controller, b.getParkingLotId());</span>
+<span class="nc" id="L775">            invoker.setCommand(getParkingLotById);</span>
+<span class="nc" id="L776">            ParkingLot parkingLot = (ParkingLot) invoker.executeCommand().getResult();</span>
+//            ParkingLot parkingLot = getParkingLotById.execute().getResult();
+<span class="nc" id="L778">            parkingSpaceBookingManagementModel.addElement(&quot;Booking: &quot; + b.getBookingId()+ &quot;, Space: &quot; + b.getParkingSpaceId() + &quot;, LotID: &quot; + b.getParkingLotId() + &quot;, Lot Name: &quot; + parkingLot.getLocation() + &quot;, From: &quot; + b.getStartTime() + &quot;, To: &quot; + b.getEndTime() + &quot;, License Place: &quot; + b.getLicensePlate() + &quot;, Checked in: &quot; + b.isCheckedIn());</span>
+<span class="nc" id="L779">        }</span>
+<span class="nc" id="L780">    }</span>
+
+    private JPanel createParkingSpaceBookingManagementPanel() {
+<span class="nc" id="L783">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L784">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L785">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L786">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L787">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L789">        JLabel instructionLabel = new JLabel(&quot;Please select existing booking from the list.&quot;);</span>
+<span class="nc" id="L790">        parkingSpaceBookingManagementModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L791">        JList&lt;String&gt; bookingList = new JList&lt;&gt;(parkingSpaceBookingManagementModel);</span>
+<span class="nc" id="L792">        updateParkingSpaceBookingManagementModel();</span>
+<span class="nc" id="L793">        JScrollPane scrollPane = new JScrollPane(bookingList);</span>
+<span class="nc" id="L794">        scrollPane.setPreferredSize(new Dimension(300, 140));</span>
+<span class="nc" id="L795">        JButton cancelButton = new JButton(&quot;Cancel Booking&quot;);</span>
+<span class="nc" id="L796">        JButton modifyButton = new JButton(&quot;Apply Changes&quot;);</span>
+<span class="nc" id="L797">        JButton extendButton = new JButton(&quot;Extend Booking by 1 Hour&quot;);</span>
+<span class="nc" id="L798">        JButton checkInButton = new JButton(&quot;Check In&quot;);</span>
+<span class="nc" id="L799">        Dimension buttonSize = new Dimension(200, 25);</span>
+<span class="nc" id="L800">        cancelButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L801">        modifyButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L802">        extendButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L803">        checkInButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L804">        SpinnerDateModel model = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);</span>
+<span class="nc" id="L805">        JSpinner fromTimeSpinner = new JSpinner(model);</span>
+<span class="nc" id="L806">        fromTimeSpinner.setEditor(new JSpinner.DateEditor(fromTimeSpinner, &quot;yyyy-MM-dd HH:mm&quot;));</span>
+<span class="nc" id="L807">        JLabel fromLabel = new JLabel(&quot;New From:&quot;);</span>
+<span class="nc" id="L808">        JLabel licenseLabel = new JLabel(&quot;New License Plate:&quot;);</span>
+<span class="nc" id="L809">        JTextField licenseField = new JTextField(15);</span>
+<span class="nc" id="L810">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L811">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L812">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L814">        gbc.gridx = 0;</span>
+<span class="nc" id="L815">        gbc.gridy = 0;</span>
+<span class="nc" id="L816">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L817">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L818">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L820">        gbc.gridy = 1;</span>
+<span class="nc" id="L821">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L822">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L824">        gbc.gridy = 2;</span>
+<span class="nc" id="L825">        gbc.gridx = 0;</span>
+<span class="nc" id="L826">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L827">        panel.add(fromLabel, gbc);</span>
+        
+<span class="nc" id="L829">        gbc.gridx = 1;</span>
+<span class="nc" id="L830">        panel.add(fromTimeSpinner, gbc);</span>
+
+<span class="nc" id="L832">        gbc.gridy = 3;</span>
+<span class="nc" id="L833">        gbc.gridx = 0;</span>
+<span class="nc" id="L834">        panel.add(licenseLabel, gbc);</span>
+        
+<span class="nc" id="L836">        gbc.gridx = 1;</span>
+<span class="nc" id="L837">        panel.add(licenseField, gbc);</span>
+
+<span class="nc" id="L839">        gbc.gridy = 4;</span>
+<span class="nc" id="L840">        gbc.gridx = 0;</span>
+<span class="nc" id="L841">        panel.add(cancelButton, gbc);</span>
+
+<span class="nc" id="L843">        gbc.gridx = 1;</span>
+<span class="nc" id="L844">        panel.add(modifyButton, gbc);</span>
+        
+<span class="nc" id="L846">        gbc.gridx = 0;</span>
+<span class="nc" id="L847">        gbc.gridy = 5;</span>
+<span class="nc" id="L848">        panel.add(extendButton, gbc);</span>
+
+<span class="nc" id="L850">        gbc.gridx = 1;</span>
+<span class="nc" id="L851">        panel.add(checkInButton, gbc);</span>
+
+<span class="nc" id="L853">        gbc.gridy = 6;</span>
+<span class="nc" id="L854">        gbc.gridx = 0;</span>
+<span class="nc" id="L855">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L856">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L858">        gbc.gridy = 7;</span>
+<span class="nc" id="L859">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L861">        modifyButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L862" title="All 2 branches missed.">            if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L863">                JOptionPane.showMessageDialog(frame, &quot;Please select a booking first.&quot;);</span>
+<span class="nc" id="L864">                return;</span>
+            }
+<span class="nc" id="L866">            String booking = bookingList.getSelectedValue();</span>
+            try {
+<span class="nc bnc" id="L868" title="All 2 branches missed.">                if (licenseField.getText().isEmpty()) {</span>
+<span class="nc" id="L869">                    throw new IllegalArgumentException(&quot;License plate can't be empty.&quot;);</span>
+                }
+<span class="nc bnc" id="L871" title="All 2 branches missed.">                if (licenseField.getText().length() != 7) {</span>
+<span class="nc" id="L872">                    throw new IllegalArgumentException(&quot;License plate must be 7 characters long.&quot;);</span>
+                }
+<span class="nc bnc" id="L874" title="All 2 branches missed.">                if (!licenseField.getText().matches(&quot;^[A-Za-z]{4}\\d{3}$&quot;)) {</span>
+<span class="nc" id="L875">                    throw new IllegalArgumentException(&quot;License plate must be in the standard Ontario Passenger Plate format: ABCD123&quot;);</span>
+                }
+<span class="nc" id="L877">                Date fromTime = (Date) fromTimeSpinner.getValue();</span>
+<span class="nc" id="L878">                Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L879">                calendar.setTime(fromTime);</span>
+<span class="nc" id="L880">                calendar.add(Calendar.HOUR, 1);</span>
+<span class="nc" id="L881">                Date toTime = calendar.getTime();</span>
+<span class="nc" id="L882">                Command&lt;Void&gt; modifyParkingSpaceBooking = new ModifyParkingSpaceBookingCommand(</span>
+                        controller,
+                        currUserEmail,
+<span class="nc" id="L885">                        Integer.parseInt(booking.split(&quot;, &quot;)[0].substring(9)),</span>
+<span class="nc" id="L886">                        Integer.parseInt(booking.split(&quot;, &quot;)[1].substring(7)),</span>
+<span class="nc" id="L887">                        Integer.parseInt(booking.split(&quot;, &quot;)[2].substring(7)),</span>
+<span class="nc" id="L888">                        licenseField.getText(),</span>
+                        fromTime,
+                        toTime);
+<span class="nc" id="L891">                invoker.setCommand(modifyParkingSpaceBooking);</span>
+<span class="nc" id="L892">                invoker.executeCommand();</span>
+//                modifyParkingSpaceBooking.execute();
+<span class="nc" id="L894">                JOptionPane.showMessageDialog(frame, &quot;Parking Space was successfully modified!&quot;);</span>
+<span class="nc" id="L895">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L896">                JOptionPane.showMessageDialog(frame, &quot;Couldn't modify the booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L897">            }</span>
+<span class="nc" id="L898">        });</span>
+
+<span class="nc" id="L900">        cancelButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L901" title="All 2 branches missed.">            if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L902">                JOptionPane.showMessageDialog(frame, &quot;Please select a booking first.&quot;);</span>
+<span class="nc" id="L903">                return;</span>
+            }
+<span class="nc" id="L905">            String booking = bookingList.getSelectedValue();</span>
+            try {
+<span class="nc" id="L907">                Command&lt;Void&gt; cancelParkingSpaceBooking = new CancelParkingSpaceBookingCommand(</span>
+                        controller,
+                        currUserEmail,
+<span class="nc" id="L910">                        Integer.parseInt(booking.split(&quot;, &quot;)[2].substring(7)),</span>
+<span class="nc" id="L911">                        Integer.parseInt(booking.split(&quot;, &quot;)[1].substring(7)));</span>
+<span class="nc" id="L912">                invoker.setCommand(cancelParkingSpaceBooking);</span>
+<span class="nc" id="L913">                invoker.executeCommand();</span>
+<span class="nc" id="L914">                JOptionPane.showMessageDialog(frame, &quot;Parking Space was successfully canceled!&quot;);</span>
+<span class="nc" id="L915">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L916">                JOptionPane.showMessageDialog(frame, &quot;Couldn't cancel the booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L917">            }</span>
+<span class="nc" id="L918">        });</span>
+
+<span class="nc" id="L920">        extendButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L921" title="All 2 branches missed.">            if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L922">                JOptionPane.showMessageDialog(frame, &quot;Please select a booking first.&quot;);</span>
+<span class="nc" id="L923">                return;</span>
+            }
+<span class="nc" id="L925">            String booking = bookingList.getSelectedValue();</span>
+            try {
+<span class="nc" id="L927">                Command&lt;Booking&gt; getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(&quot;, &quot;)[0].substring(9)));</span>
+<span class="nc" id="L928">                invoker.setCommand(getBookingById);</span>
+<span class="nc" id="L929">                Booking bookingObj = (Booking) invoker.executeCommand().getResult();</span>
+//                Booking bookingObj = getBookingById.execute().getResult();
+
+<span class="nc bnc" id="L932" title="All 2 branches missed.">                if (bookingObj.getEndTime().before(new Date())) {</span>
+<span class="nc" id="L933">                    throw new IllegalArgumentException(&quot;You can't extend a booking that has already ended.&quot;);</span>
+                }
+
+<span class="nc" id="L936">                Date newEndTime = new Date(bookingObj.getEndTime().getTime() + 3600000); // Add 1 hour</span>
+<span class="nc" id="L937">                Command&lt;Void&gt; modifyParkingSpaceBooking = new ModifyParkingSpaceBookingCommand(</span>
+                        controller,
+                        currUserEmail,
+<span class="nc" id="L940">                        bookingObj.getBookingId(),</span>
+<span class="nc" id="L941">                        bookingObj.getParkingSpaceId(),</span>
+<span class="nc" id="L942">                        bookingObj.getParkingLotId(),</span>
+<span class="nc" id="L943">                        bookingObj.getLicensePlate(),</span>
+<span class="nc" id="L944">                        bookingObj.getStartTime(),</span>
+                        newEndTime);
+<span class="nc" id="L946">                invoker.setCommand(modifyParkingSpaceBooking);</span>
+<span class="nc" id="L947">                invoker.executeCommand();</span>
+//                modifyParkingSpaceBooking.execute();
+<span class="nc" id="L949">                JOptionPane.showMessageDialog(frame, &quot;Booking was successfully extended by 1 hour!&quot;);</span>
+<span class="nc" id="L950">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L951">                JOptionPane.showMessageDialog(frame, &quot;Couldn't extend the booking: &quot; + e.getMessage());</span>
+<span class="nc" id="L952">            }</span>
+<span class="nc" id="L953">        });</span>
+
+<span class="nc" id="L955">        checkInButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L956" title="All 2 branches missed.">            if (bookingList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L957">                JOptionPane.showMessageDialog(frame, &quot;Please select a booking first.&quot;);</span>
+<span class="nc" id="L958">                return;</span>
+            }
+<span class="nc" id="L960">            String booking = bookingList.getSelectedValue();</span>
+<span class="nc bnc" id="L961" title="All 2 branches missed.">            if (booking.split(&quot;, &quot;)[7].substring(12).equals(&quot;true&quot;)) {</span>
+<span class="nc" id="L962">                JOptionPane.showMessageDialog(frame, &quot;You have already checked in!&quot;);</span>
+<span class="nc" id="L963">                return;</span>
+            }
+            try {
+<span class="nc" id="L966">                Command&lt;Booking&gt; getBookingById = new GetBookingByIdCommand(controller, Integer.parseInt(booking.split(&quot;, &quot;)[0].substring(9)));</span>
+<span class="nc" id="L967">                invoker.setCommand(getBookingById);</span>
+<span class="nc" id="L968">                Booking bookingObj = (Booking) invoker.executeCommand().getResult();</span>
+//                Booking bookingObj = getBookingById.execute().getResult();
+<span class="nc bnc" id="L970" title="All 2 branches missed.">                if (bookingObj.getEndTime().before(new Date())) {</span>
+<span class="nc" id="L971">                    throw new IllegalArgumentException(&quot;You can't check in after the booking has ended.&quot;);</span>
+                }
+<span class="nc bnc" id="L973" title="All 2 branches missed.">                if (bookingObj.getStartTime().before(new Date())) {</span>
+<span class="nc" id="L974">                    Command&lt;Void&gt; checkIn = new CheckInToBookingCommand(</span>
+                            controller,
+                            bookingObj);
+<span class="nc" id="L977">                    invoker.setCommand(checkIn);</span>
+<span class="nc" id="L978">                    invoker.executeCommand();</span>
+//                    checkIn.execute();
+<span class="nc bnc" id="L980" title="All 2 branches missed.">                    if (bookingObj.getCheckInTime().getTime() - bookingObj.getStartTime().getTime() &lt; 3600000)</span>
+<span class="nc" id="L981">                        JOptionPane.showMessageDialog(frame, &quot;You have successfully checked in!&quot;);</span>
+                    else
+<span class="nc" id="L983">                        JOptionPane.showMessageDialog(frame, &quot;You have successfully checked in! No-show in the first hour so deposit fee will not be deducted.&quot;);</span>
+<span class="nc" id="L984">                } else {</span>
+<span class="nc" id="L985">                    throw new IllegalArgumentException(&quot;You can't check in before the booking time.&quot;);</span>
+                }
+<span class="nc" id="L987">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L988">                JOptionPane.showMessageDialog(frame, &quot;Couldn't check in: &quot; + e.getMessage());</span>
+<span class="nc" id="L989">            }</span>
+<span class="nc" id="L990">        });</span>
+
+<span class="nc" id="L992">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L993">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L994">        });</span>
+        
+<span class="nc" id="L996">        return panel;</span>
+        
+    }
+   
+    private void updateParkingLotManagementModel() {
+<span class="nc" id="L1001">        parkingLotManagementModel.clear();</span>
+<span class="nc" id="L1002">        Command&lt;List&lt;ParkingLot&gt;&gt; getParkingLotList = new GetParkingLotListCommand(controller);</span>
+<span class="nc" id="L1003">        invoker.setCommand(getParkingLotList);</span>
+<span class="nc" id="L1004">        List&lt;ParkingLot&gt; parkingLots = (List&lt;ParkingLot&gt;) invoker.executeCommand().getResult();</span>
+//        List&lt;ParkingLot&gt; parkingLots = getParkingLotList.execute().getResult();
+        // for (ParkingLot p : controller.getParkingLotList())
+<span class="nc bnc" id="L1007" title="All 2 branches missed.">        for (ParkingLot p : parkingLots)</span>
+<span class="nc bnc" id="L1008" title="All 2 branches missed.">            parkingLotManagementModel.addElement(p.getParkingLotId() + &quot;, &quot; + p.getLocation() + &quot;, &quot; + (p.isEnabled()? &quot;enabled&quot; : &quot;disabled&quot;));</span>
+       
+<span class="nc" id="L1010">    }</span>
+
+    private JPanel createParkingLotManagementPanel() {
+<span class="nc" id="L1013">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L1014">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L1015">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L1016">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L1017">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L1019">        JLabel instructionLabel = new JLabel(&quot;Please select a parking lot from the list or add a new one.&quot;);</span>
+<span class="nc" id="L1020">        parkingLotManagementModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L1021">        JList&lt;String&gt; parkingLotList = new JList&lt;&gt;(parkingLotManagementModel);</span>
+<span class="nc" id="L1022">        updateParkingLotManagementModel();</span>
+<span class="nc" id="L1023">        JScrollPane scrollPane = new JScrollPane(parkingLotList);</span>
+<span class="nc" id="L1024">        scrollPane.setPreferredSize(new Dimension(300, 150));</span>
+<span class="nc" id="L1025">        JButton manageParkingSpaceButton = new JButton(&quot;Manage Parking Spaces in this Lot&quot;);</span>
+<span class="nc" id="L1026">        JButton disableButton = new JButton(&quot;Disable Parking Lot&quot;);</span>
+<span class="nc" id="L1027">        JButton enableButton = new JButton(&quot;Enable Parking Lot&quot;);</span>
+<span class="nc" id="L1028">        JButton addButton = new JButton(&quot;Add A New Parking Lot&quot;);</span>
+<span class="nc" id="L1029">        Dimension buttonSize = new Dimension(200, 25);</span>
+<span class="nc" id="L1030">        disableButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L1031">        enableButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L1032">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L1033">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L1034">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L1036">        gbc.gridx = 0;</span>
+<span class="nc" id="L1037">        gbc.gridy = 0;</span>
+<span class="nc" id="L1038">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1039">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L1040">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L1042">        gbc.gridy = 1;</span>
+<span class="nc" id="L1043">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1044">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L1046">        gbc.gridy = 2;</span>
+<span class="nc" id="L1047">        panel.add(manageParkingSpaceButton, gbc);</span>
+
+<span class="nc" id="L1049">        gbc.gridy = 3;</span>
+<span class="nc" id="L1050">        panel.add(addButton, gbc);</span>
+        
+<span class="nc" id="L1052">        gbc.gridy = 4;</span>
+<span class="nc" id="L1053">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L1054">        panel.add(disableButton, gbc);</span>
+        
+<span class="nc" id="L1056">        gbc.gridx = 1;</span>
+<span class="nc" id="L1057">        panel.add(enableButton, gbc);</span>
+        
+<span class="nc" id="L1059">        gbc.gridx = 0;</span>
+<span class="nc" id="L1060">        gbc.gridy = 5;</span>
+<span class="nc" id="L1061">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1062">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L1064">        gbc.gridy = 6;</span>
+<span class="nc" id="L1065">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L1067">        addButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L1068">            String location = JOptionPane.showInputDialog(frame, &quot;Enter the location of the new parking lot:&quot;);</span>
+<span class="nc bnc" id="L1069" title="All 2 branches missed.">            if (location == null) return;</span>
+            // controller.createParkingLot(location);
+<span class="nc" id="L1071">            Command&lt;Void&gt; createParkingLot = new CreateParkingLotCommand(controller, location);</span>
+<span class="nc" id="L1072">            invoker.setCommand(createParkingLot);</span>
+<span class="nc" id="L1073">            Result&lt;Void&gt; result = (Result&lt;Void&gt;) invoker.executeCommand();</span>
+//            Result&lt;Void&gt; result = createParkingLot.execute();
+<span class="nc bnc" id="L1075" title="All 2 branches missed.">            if (result == null) {</span>
+<span class="nc" id="L1076">                JOptionPane.showMessageDialog(frame, &quot;Parking lot was successfully added!&quot;);</span>
+                // updateParkingLotManagementModel();
+            } else {
+<span class="nc" id="L1079">                JOptionPane.showMessageDialog(frame, &quot;Couldn't add the parking lot: &quot; + result.getMessage());</span>
+            }
+<span class="nc" id="L1081">        });</span>
+
+<span class="nc" id="L1083">        disableButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L1084" title="All 2 branches missed.">            if (parkingLotList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L1085">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking lot first.&quot;);</span>
+<span class="nc" id="L1086">                return;</span>
+            }
+<span class="nc" id="L1088">            String parkingLot = parkingLotList.getSelectedValue();</span>
+<span class="nc" id="L1089">            controller.disableParkingLotById(Integer.parseInt(parkingLot.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L1090">            JOptionPane.showMessageDialog(frame, &quot;Parking lot was successfully disabled!&quot;);</span>
+            // updateParkingLotManagementModel();
+<span class="nc" id="L1092">        });</span>
+
+<span class="nc" id="L1094">        enableButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L1095" title="All 2 branches missed.">            if (parkingLotList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L1096">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking lot first.&quot;);</span>
+<span class="nc" id="L1097">                return;</span>
+            }
+<span class="nc" id="L1099">            String parkingLot = parkingLotList.getSelectedValue();</span>
+<span class="nc" id="L1100">            controller.enableParkingLotById(Integer.parseInt(parkingLot.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L1101">            JOptionPane.showMessageDialog(frame, &quot;Parking lot was successfully enabled!&quot;);</span>
+            // updateParkingLotManagementModel();
+<span class="nc" id="L1103">        });</span>
+
+<span class="nc" id="L1105">        manageParkingSpaceButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L1106" title="All 2 branches missed.">            if (parkingLotList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L1107">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking lot first.&quot;);</span>
+<span class="nc" id="L1108">                return;</span>
+            }
+<span class="nc" id="L1110">            String parkingLot = parkingLotList.getSelectedValue();</span>
+<span class="nc" id="L1111">            currParkingLot = Integer.parseInt(parkingLot.split(&quot;, &quot;)[0]);</span>
+<span class="nc" id="L1112">            prevPanels.push(&quot;ParkingLotManagement&quot;);</span>
+<span class="nc" id="L1113">            updateparkingSpaceManagementModel();</span>
+<span class="nc" id="L1114">            cardLayout.show(mainPanel, &quot;ParkingSpaceManagement&quot;);</span>
+<span class="nc" id="L1115">        });</span>
+
+<span class="nc" id="L1117">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L1118">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L1119">        });</span>
+        
+<span class="nc" id="L1121">        return panel;</span>
+    }
+
+    private void updateparkingSpaceManagementModel() {
+<span class="nc" id="L1125">        parkingSpaceManagementModel.clear();</span>
+        // ParkingLot currPL = controller.getParkingLotById(currParkingLot);
+<span class="nc" id="L1127">        Command&lt;ParkingLot&gt; getParkingLotById = new GetParkingLotByIdCommand(controller, currParkingLot);</span>
+<span class="nc" id="L1128">        invoker.setCommand(getParkingLotById);</span>
+<span class="nc" id="L1129">        ParkingLot currPL = (ParkingLot) invoker.executeCommand().getResult();</span>
+//        ParkingLot currPL = getParkingLotById.execute().getResult();
+        
+<span class="nc bnc" id="L1132" title="All 2 branches missed.">        if (currPL != null)</span>
+<span class="nc bnc" id="L1133" title="All 2 branches missed.">            for (ParkingSpace p : currPL.getSpaces())</span>
+<span class="nc" id="L1134">                parkingSpaceManagementModel.addElement(p.getParkingSpaceId() + &quot;, &quot; + p.getParkingLotId() + &quot;, &quot; + p.getStatus());</span>
+       
+<span class="nc" id="L1136">    }</span>
+
+    private JPanel createParkingSpaceManagementPanel() {
+<span class="nc" id="L1139">        JPanel panel = new JPanel();</span>
+<span class="nc" id="L1140">        panel.setLayout(new GridBagLayout());</span>
+<span class="nc" id="L1141">        GridBagConstraints gbc = new GridBagConstraints();</span>
+<span class="nc" id="L1142">        gbc.insets = new Insets(10, 10, 10, 10);</span>
+<span class="nc" id="L1143">        gbc.fill = GridBagConstraints.HORIZONTAL;</span>
+        
+<span class="nc" id="L1145">        JLabel instructionLabel = new JLabel(&quot;Please select a parking space from the list.&quot;);</span>
+<span class="nc" id="L1146">        parkingSpaceManagementModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L1147">        JList&lt;String&gt; parkingSpaceList = new JList&lt;&gt;(parkingSpaceManagementModel);</span>
+<span class="nc" id="L1148">        updateparkingSpaceManagementModel();</span>
+<span class="nc" id="L1149">        JScrollPane scrollPane = new JScrollPane(parkingSpaceList);</span>
+<span class="nc" id="L1150">        scrollPane.setPreferredSize(new Dimension(300, 150));</span>
+<span class="nc" id="L1151">        JButton disableButton = new JButton(&quot;Disable Parking Space&quot;);</span>
+<span class="nc" id="L1152">        JButton enableButton = new JButton(&quot;Enable Parking Space&quot;);</span>
+<span class="nc" id="L1153">        Dimension buttonSize = new Dimension(200, 25);</span>
+<span class="nc" id="L1154">        disableButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L1155">        enableButton.setPreferredSize(buttonSize);</span>
+<span class="nc" id="L1156">        JButton backButton = new JButton(&quot;Back&quot;);</span>
+<span class="nc" id="L1157">        JLabel spacer = new JLabel(&quot; &quot;);</span>
+<span class="nc" id="L1158">        spacer.setPreferredSize(new Dimension(0, 20));</span>
+        
+<span class="nc" id="L1160">        gbc.gridx = 0;</span>
+<span class="nc" id="L1161">        gbc.gridy = 0;</span>
+<span class="nc" id="L1162">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1163">        gbc.anchor = GridBagConstraints.CENTER;</span>
+<span class="nc" id="L1164">        panel.add(instructionLabel, gbc);</span>
+        
+<span class="nc" id="L1166">        gbc.gridy = 1;</span>
+<span class="nc" id="L1167">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1168">        panel.add(scrollPane, gbc);</span>
+        
+<span class="nc" id="L1170">        gbc.gridy = 2;</span>
+<span class="nc" id="L1171">        gbc.gridwidth = 1;</span>
+<span class="nc" id="L1172">        panel.add(disableButton, gbc);</span>
+        
+<span class="nc" id="L1174">        gbc.gridx = 1;</span>
+<span class="nc" id="L1175">        panel.add(enableButton, gbc);</span>
+        
+<span class="nc" id="L1177">        gbc.gridx = 0;</span>
+<span class="nc" id="L1178">        gbc.gridy = 3;</span>
+<span class="nc" id="L1179">        gbc.gridwidth = 2;</span>
+<span class="nc" id="L1180">        panel.add(spacer, gbc);</span>
+        
+<span class="nc" id="L1182">        gbc.gridy = 4;</span>
+<span class="nc" id="L1183">        panel.add(backButton, gbc);</span>
+
+<span class="nc" id="L1185">        enableButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L1186" title="All 2 branches missed.">            if (parkingSpaceList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L1187">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking space first.&quot;);</span>
+<span class="nc" id="L1188">                return;</span>
+            }
+<span class="nc" id="L1190">            String parkingSpace = parkingSpaceList.getSelectedValue();</span>
+<span class="nc" id="L1191">            controller.enableParkingSpaceById(currParkingLot, Integer.parseInt(parkingSpace.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L1192">            JOptionPane.showMessageDialog(frame, &quot;Parking lot was successfully enabled!&quot;);</span>
+            // updateparkingSpaceManagementModel();
+<span class="nc" id="L1194">        });</span>
+
+<span class="nc" id="L1196">        disableButton.addActionListener(_ -&gt; {</span>
+<span class="nc bnc" id="L1197" title="All 2 branches missed.">            if (parkingSpaceList.getSelectedIndex() == -1) {</span>
+<span class="nc" id="L1198">                JOptionPane.showMessageDialog(frame, &quot;Please select a parking space first.&quot;);</span>
+<span class="nc" id="L1199">                return;</span>
+            }
+<span class="nc" id="L1201">            String parkingSpace = parkingSpaceList.getSelectedValue();</span>
+<span class="nc" id="L1202">            controller.disableParkingSpaceById(currParkingLot, Integer.parseInt(parkingSpace.split(&quot;, &quot;)[0]));</span>
+<span class="nc" id="L1203">            JOptionPane.showMessageDialog(frame, &quot;Parking lot was successfully disabled!&quot;);</span>
+            // updateparkingSpaceManagementModel();
+<span class="nc" id="L1205">        });</span>
+
+<span class="nc" id="L1207">        backButton.addActionListener(_ -&gt; {</span>
+<span class="nc" id="L1208">            cardLayout.show(mainPanel, prevPanels.pop());</span>
+<span class="nc" id="L1209">        });</span>
+        
+<span class="nc" id="L1211">        return panel;</span>
+    }
+
+    @Override
+    public void update(String tableName) {
+        // Update the corresponding model based on the table name
+<span class="nc bnc" id="L1217" title="All 6 branches missed.">        switch (tableName) {</span>
+<span class="nc" id="L1218">            case &quot;Users&quot; -&gt; updateUserApprovalModel();</span>
+            case &quot;Bookings&quot; -&gt; {
+<span class="nc" id="L1220">                updateParkingSpaceBookingManagementModel();</span>
+<span class="nc" id="L1221">                updateParkingSpaceBookingModel();</span>
+<span class="nc" id="L1222">            }</span>
+<span class="nc" id="L1223">            case &quot;ParkingLots&quot; -&gt; updateParkingLotManagementModel();</span>
+<span class="nc" id="L1224">            case &quot;ParkingSpaces&quot; -&gt; updateparkingSpaceManagementModel();</span>
+<span class="nc" id="L1225">            case &quot;Payments&quot; -&gt; updatePaymentModel();</span>
+        }
+<span class="nc" id="L1227">    }</span>
+
+    public static void main(String[] args) {
+        try {
+<span class="nc" id="L1231">            UIManager.setLookAndFeel( new FlatLightLaf() );</span>
+<span class="nc" id="L1232">        } catch(UnsupportedLookAndFeelException e ) {</span>
+<span class="nc" id="L1233">            System.err.println( &quot;Failed to initialize LaF&quot; );</span>
+<span class="nc" id="L1234">        }</span>
+<span class="nc" id="L1235">        SwingUtilities.invokeLater(ParkingSystemGUI::new);</span>
+<span class="nc" id="L1236">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

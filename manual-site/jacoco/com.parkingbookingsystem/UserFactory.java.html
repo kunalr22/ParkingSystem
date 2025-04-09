@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">parking-booking-system</a> &gt; <a href="index.source.html" class="el_package">com.parkingbookingsystem</a> &gt; <span class="el_source">UserFactory.java</span></div><h1>UserFactory.java</h1><pre class="source lang-java linenums">package com.parkingbookingsystem;
+
+<span class="nc" id="L3">public class UserFactory {</span>
+
+    public static User createUser(String... params) {
+<span class="fc" id="L6">        String email = params[0];</span>
+<span class="fc" id="L7">        String password = params[1];</span>
+<span class="fc" id="L8">        String type = params[2];</span>
+<span class="fc" id="L9">        boolean isValidated = false;</span>
+<span class="fc bfc" id="L10" title="All 2 branches covered.">        if (params.length &gt; 3) {</span>
+<span class="fc" id="L11">            isValidated = Boolean.parseBoolean(params[3]);</span>
+        }
+
+        User newUser;
+
+<span class="fc bfc" id="L16" title="All 7 branches covered.">        switch (type) {</span>
+<span class="fc" id="L17">            case SuperManager.TYPE -&gt; newUser = SuperManager.getInstance(email, password);</span>
+<span class="fc" id="L18">            case Manager.TYPE -&gt; newUser = new Manager(email, password);</span>
+<span class="fc" id="L19">            case Staff.TYPE -&gt; newUser = new Staff(email, password);</span>
+<span class="fc" id="L20">            case Student.TYPE -&gt; newUser = new Student(email, password);</span>
+<span class="fc" id="L21">            case Visitor.TYPE -&gt; newUser = new Visitor(email, password);</span>
+<span class="fc" id="L22">            case Faculty.TYPE -&gt; newUser = new Faculty(email, password);</span>
+            default -&gt; {
+<span class="fc" id="L24">                return null; // bad user type</span>
+            }
+        }
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">        if (isValidated &amp;&amp; newUser instanceof Client) {</span>
+<span class="fc" id="L28">            ((Client) newUser).validate();</span>
+        }
+<span class="fc" id="L30">        return newUser;</span>
+    }
+
+    public static String[] getAllClientTypes() {
+<span class="fc" id="L34">        return new String[] {Staff.TYPE, Student.TYPE, Visitor.TYPE, Faculty.TYPE};</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
