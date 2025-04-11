@@ -1,3 +1,5 @@
+package com.randooptests;
+
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -118,7 +120,7 @@ public class RegressionTest0 {
         com.parkingbookingsystem.Visitor visitor2 = new com.parkingbookingsystem.Visitor("", "hi!");
         java.lang.String str3 = visitor2.toString();
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str3 + "' != '" + "{ email='', password='hi!', type='Visitor'}" + "'", str3.equals("{ email='', password='hi!', type='Visitor'}"));
+        org.junit.Assert.assertTrue("'" + str3 + "' != '" + "{ email='', password='hi!', type='Visitor' }" + "'", str3.equals("{ email='', password='hi!', type='Visitor' }"));
     }
 
     @Test
@@ -668,7 +670,7 @@ public class RegressionTest0 {
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertNull(user3);
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str11 + "' != '" + "{ email='Non-Faculty Staff', password='Faculty', type='Non-Faculty Staff'}" + "'", str11.equals("{ email='Non-Faculty Staff', password='Faculty', type='Non-Faculty Staff'}"));
+        org.junit.Assert.assertTrue("'" + str11 + "' != '" + "{ email='Non-Faculty Staff', password='Faculty', type='Non-Faculty Staff' }" + "'", str11.equals("{ email='Non-Faculty Staff', password='Faculty', type='Non-Faculty Staff' }"));
     }
 
     @Test
@@ -1314,7 +1316,7 @@ public class RegressionTest0 {
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertNotNull(strArray3);
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str4 + "' != '" + "{ email='', password='hi!', type='Visitor'}" + "'", str4.equals("{ email='', password='hi!', type='Visitor'}"));
+        org.junit.Assert.assertTrue("'" + str4 + "' != '" + "{ email='', password='hi!', type='Visitor' }" + "'", str4.equals("{ email='', password='hi!', type='Visitor' }"));
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertTrue("'" + str5 + "' != '" + "hi!" + "'", str5.equals("hi!"));
         // Regression assertion (captures the current behavior of the code)
@@ -2705,7 +2707,7 @@ public class RegressionTest0 {
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertNotNull(strArray3);
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str4 + "' != '" + "{ email='', password='hi!', type='Visitor'}" + "'", str4.equals("{ email='', password='hi!', type='Visitor'}"));
+        org.junit.Assert.assertTrue("'" + str4 + "' != '" + "{ email='', password='hi!', type='Visitor' }" + "'", str4.equals("{ email='', password='hi!', type='Visitor' }"));
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertTrue("'" + str5 + "' != '" + "hi!" + "'", str5.equals("hi!"));
     }
@@ -3862,11 +3864,11 @@ public class RegressionTest0 {
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertTrue("'" + str6 + "' != '" + "" + "'", str6.equals(""));
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str7 + "' != '" + "{ email='', password='hi!', type='Visitor'}" + "'", str7.equals("{ email='', password='hi!', type='Visitor'}"));
+        org.junit.Assert.assertTrue("'" + str7 + "' != '" + "{ email='', password='hi!', type='Visitor' }" + "'", str7.equals("{ email='', password='hi!', type='Visitor' }"));
         // Regression assertion (captures the current behavior of the code)
         org.junit.Assert.assertTrue("'" + str8 + "' != '" + "Visitor" + "'", str8.equals("Visitor"));
         // Regression assertion (captures the current behavior of the code)
-        org.junit.Assert.assertTrue("'" + str9 + "' != '" + "{ email='', password='hi!', type='Visitor'}" + "'", str9.equals("{ email='', password='hi!', type='Visitor'}"));
+        org.junit.Assert.assertTrue("'" + str9 + "' != '" + "{ email='', password='hi!', type='Visitor' }" + "'", str9.equals("{ email='', password='hi!', type='Visitor' }"));
     }
 
     @Test
